@@ -1,0 +1,23 @@
+import cv2
+import numpy as np
+
+params = cv2.SimpleBlobDetector_Params()
+params.filterByColor=True
+params.blobColor=255
+params.filterByArea=True
+params.minArea=0
+params.maxArea=50000
+
+detector = cv2.SimpleBlobDetector_create(params)
+img = cv2.imread("C:\Users\Public\Pictures\Sample Pictures\OriginalColors.jpg")
+HSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+newFrame = cv2.inRange(HSV,(25,0,10),(75,255,245))
+keypoints = detector.detect(newFrame)
+imWithKeypoint = cv2.drawKeypoints(newFrame, keypoints,
+                                    np.array([]), (0,0,255),
+                                    cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+cv2.imshow("ErodedImage", imWithKeypoint)
+cv2.waitKey()
+cv2.destroyAllWindows()
