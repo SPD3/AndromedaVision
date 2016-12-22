@@ -21,6 +21,7 @@ params.filterByInertia=False
 params.filterByCircularity
 detector = cv2.SimpleBlobDetector_create(params)
 
+
 while True:
     ret, frame = cap.read()
     HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -32,9 +33,10 @@ while True:
     keypoints = detector.detect(erodedFrame)
     imWithKeypoint = cv2.drawKeypoints(erodedFrame, keypoints,
                                     np.array([]), (0,0,255),
-                                    )
+                                    cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    
     cv2.imshow('image', imWithKeypoint)
-    if cv2.waitKey(5000)& 0xFF == ord('q'):
+    if cv2.waitKey(30)& 0xFF == ord('q'):
         break
 cap.release()
 cv2.destroyWindow('image')

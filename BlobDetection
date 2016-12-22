@@ -9,7 +9,9 @@ params.thresholdStep=1
 #print params.minThreshold, params.maxThreshold, params.thresholdStep
 #print params.minRepeatability
 params.minRepeatability = 0
-params.filterByArea=False
+params.filterByArea=True
+params.minArea=2000
+params.maxArea=100000
 params.filterByCircularity=False
 params.filterByColor=False
 params.filterByConvexity=False
@@ -25,12 +27,14 @@ GaussianBlurImage = cv2.GaussianBlur(newFrame,(3,3),1.6)
 erodedFrame = cv2.erode(GaussianBlurImage,(3,3))
 erodedFrame = cv2.erode(erodedFrame,(3,3))
 keypoints = detector.detect(erodedFrame)
-print len(keypoints)
-#print keypoints
+x = len(keypoints)
 imWithKeypoint = cv2.drawKeypoints(erodedFrame, keypoints,
                                     np.array([]), (0,0,255),
                                     cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
+if x !=0:
+    key
+    
 cv2.imshow("ErodedImage", imWithKeypoint)
 cv2.waitKey()
 cv2.destroyAllWindows()
