@@ -7,13 +7,17 @@ def main():
     img = cv2.imread("C:\Users\Public\Pictures\Sample Pictures\UShapeImage5.png")
     preparedImage = prepareImage(img)
     correctColorImage = filterColors(preparedImage)
-    copy=correctColorImage.copy() #need to do this because the findContours function alters the source image
+    copy = correctColorImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy)
-    correctLength2WidthRatioList = filterLength2WidthRatio(correctNumberOfContoursList)
+    correctSizeList = filterSize(correctNumberOfContoursList)
+    correctLength2WidthRatioList = filterLength2WidthRatio(correctSizeList)
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctLength2WidthRatioList, correctColorImage)
     correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, correctColorImage)
     correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, correctColorImage)
     correctTemplateMatchList = filterByTemplateMatch(correctLeftHalfBlack2WhiteRatioList, correctColorImage)
+    correctUShape = getLargestBoundingBox(correctTemplateMatchList)
+    distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctUShape)
+    return distanceUShapeIsFromTarget
     
 def prepareImage(image):
     #Cancels out very small bits of noice by blurring the image and then eroding it
@@ -39,13 +43,23 @@ def filterContours(image):
     #Returns BOUNDING BOXES!!!!
 
 def filterLength2WidthRatio(goodBoundingBoxes):
-    #Filter out all "Blobs" with length to width ratios not between .8 and 1.2
+    #Filters out all "Blobs" with length to width ratios not between .8 and 1.2
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         if 0.8 < box[2]/ box[3] < 1.2:
             betterBoundingBoxes = betterBoundingBoxes +  [box]
     return betterBoundingBoxes
 
+def filterSize(goodBoundingBoxes):
+    #Filters out "Blobs" that are way too big or way too small
+    betterBoundingBoxes = []
+    for box in goodBoundingBoxes:
+        width =  box[2]
+        height =  box[3]
+        if 10 < width < 500 and 10 < height < 500:
+            betterBoundingBoxes = betterBoundingBoxes + [box]
+    return betterBoundingBoxes
+        
 def filterBlack2WhiteRatio(goodBoundingBoxes, image):
     #Filters out all "Blobs" that do not have a ratio of white to black pixels between 0.6-0.8:0
     betterBoundingBoxes = []
@@ -84,16 +98,52 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image):
     return betterBoundingBoxes
 
 def filterByTemplateMatch(goodBoundingBoxes, image):
+    #Creates and matches a U shape template over "Blobs" that are passed in; Returns blobs that are over 70%(I think %) similar to the template
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
-        tempImage = image[y:y+height, x:x+width]
-        template = np.zeros((512,512,3), np.uint8)
-        cv2.rectangle(template,(x,y),(int(height/3.5),height + y), (0,255,0),-1)
-        cv2.rectangle(template,(x,y+height- int(height/7)),(x+width,y+height),(0,255,0),-1)
-        cv2.rectangle(template,(x + width - int(height/7),y),(x+width,y+height),(0,255,0),-1)
+        tempImage = image[y:y+height+1, x:x+width+1]
+        template = np.zeros((width,height,3), np.uint8)
+        cv2.rectangle(template,(0,0),(int(height/7),height), (0,255,0),-1)
+        cv2.rectangle(template,(0,height- int(height/7)),(width,height),(0,255,0),-1)
+        cv2.rectangle(template,(width - int(height/7),0),(width,height),(0,255,0),-1)
         binaryTemplate = filterColors(template)
-        
-        
+        results = cv2.matchTemplate(tempImage,binaryTemplate,cv2.TM_CCOEFF_NORMED)
+        minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(results)
+        if maxVal > .7:
+            betterBoundingBoxes = betterBoundingBoxes + [box]
+    return betterBoundingBoxes
+
+def getLargestBoundingBox(goodBoundingBoxes):
+    #gets the largest U shape because the biggest one will be the most direct one to shoot for
+    if len(goodBoundingBoxes) == 0:
+        return 1000
+    elif len(goodBoundingBoxes) == 1:
+        return goodBoundingBoxes[0]
+    elif len(goodBoundingBoxes) == 2:
+        firstArea = goodBoundingBoxes[0][2]*goodBoundingBoxes[0][3]
+        secondArea = goodBoundingBoxes[1][2]*goodBoundingBoxes[1][3]
+        if firstArea > secondArea:
+            return goodBoundingBoxes[0]
+        else:
+            return goodBoundingBoxes[1]
+    elif len(goodBoundingBoxes) == 3:
+        firstArea = goodBoundingBoxes[0][2]*goodBoundingBoxes[0][3]
+        secondArea = goodBoundingBoxes[1][2]*goodBoundingBoxes[1][3]
+        thirdArea = goodBoundingBoxes[2][2]*goodBoundingBoxes[2][3]
+        if firstArea > secondArea and firstArea > thirdArea:
+            return goodBoundingBoxes[0]
+        elif secondArea  > firstArea and secondArea > thirdArea:
+            return goodBoundingBoxes[1]
+        else:
+            return goodBoundingBoxes[2]
+
+def getDistanceUShapeIsFromTarget(UShape):
+    #Calculates how far away the Ushape is from the target spot in the image
+    x = UShape[0]
+    target = 512/2
+    distance = target - x
+    return distance
+    
 main()
 
