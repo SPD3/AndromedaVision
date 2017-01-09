@@ -1,36 +1,35 @@
 import cv2
 import numpy as np
+import os
 
-def main():
+images = "C:\\Users\\admin\\Pictures\\2017VisionExample\\Vision Images\\LED Boiler"
+
+def findUpperHighGoalTarget(img):
     #Runs all the filtiration methods; It returns the distance the U shape is form the targeted spot on the image
-    img = cv2.imread("C:\Users\Public\Pictures\Sample Pictures\UShapeImage6.png")
     preparedImage = prepareImage(img)
     correctColorImage = filterColors(preparedImage)
     copy = correctColorImage.copy() #need to do this because the findContours function alters the source image
-    correctNumberOfContoursList = filterContours(copy)
+    correctNumberOfContoursList = filterContours(copy,4)
     print len(correctNumberOfContoursList)
-    correctSizeList = filterSize(correctNumberOfContoursList)
+    correctSizeList = filterSize(correctNumberOfContoursList,1,400,3,400)
     print len(correctSizeList)
-    correctLength2WidthRatioList = filterLength2WidthRatio(correctSizeList)
+    correctLength2WidthRatioList = filterLength2WidthRatio(correctSizeList,1.8,2.2)
     print len(correctLength2WidthRatioList)
-    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctLength2WidthRatioList, correctColorImage)
+    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctLength2WidthRatioList, correctColorImage,500,100000)
     print len(correctBlack2WhiteRatioList)
-    correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, correctColorImage)
+    correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, correctColorImage,500,100000)
     print len(correctTopHalfBlack2WhiteRatioList)
-    correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, correctColorImage)
+    correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, correctColorImage,500,100000)
     print len(correctLeftHalfBlack2WhiteRatioList)
-    correctTemplateMatchList = filterByTemplateMatch(correctLeftHalfBlack2WhiteRatioList, correctColorImage)
-    print len(correctTemplateMatchList)
     print
-    correctUShape = getLargestBoundingBox(correctTemplateMatchList)
-    distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctUShape)
-    return distanceUShapeIsFromTarget
+    #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
+    return correctLeftHalfBlack2WhiteRatioList
     
 def prepareImage(image):
     #Cancels out very small bits of noice by blurring the image and then eroding it
-    GaussianBlurImage = cv2.GaussianBlur(image,(3,3),1.6)
-    erodedImage = cv2.erode(GaussianBlurImage,(3,3))
-    return erodedImage
+    gaussianBlurImage = cv2.GaussianBlur(image,(3,3),1.6)
+    erodedImage = cv2.erode(gaussianBlurImage,(3,3))
+    return gaussianBlurImage
 
 def filterColors(image):
     #Filters out all colors but green; Returns color filtered image
@@ -38,73 +37,75 @@ def filterColors(image):
     img2 = cv2.inRange(HSVImg,(40,0,10),(80,255,255))
     return img2
 
-def filterContours(image):
-    #Filters out all "Blobs" with less than 8 contours because a U shape has 8 contours;
+def filterContours(image, numberOfContours):
+    #Filters out all "Blobs" with less than "numberOfContours" contours 
     #Returns BOUNDING BOXES of "Blobs" having over 8 contours
     img3,contours,hierarchy = cv2.findContours(image, cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
     goodBoundingBoxes = []
     for box in contours:
-        if len(box)>= 8:
+        if len(box)>= numberOfContours:
             goodBoundingBoxes = goodBoundingBoxes + [cv2.boundingRect(box)]
     return goodBoundingBoxes
     #Returns BOUNDING BOXES!!!!
 
-def filterLength2WidthRatio(goodBoundingBoxes):
-    #Filters out all "Blobs" with length to width ratios not between .8 and 1.2
-    betterBoundingBoxes = []
-    for box in goodBoundingBoxes:
-        if 0.8 < box[2]/ box[3] < 1.2:
-            betterBoundingBoxes = betterBoundingBoxes +  [box]
-    return betterBoundingBoxes
-
-def filterSize(goodBoundingBoxes):
+def filterSize(goodBoundingBoxes, minHeightSize, maxHeightSize, minWidthSize, maxWidthSize):
     #Filters out "Blobs" that are way too big or way too small
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         width =  box[2]
         height =  box[3]
-        if 10 < width < 500 and 10 < height < 500:
+        if minHeightSize < height < maxHeightSize and minWidthSize < width < maxWidthSize:
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
         
-def filterBlack2WhiteRatio(goodBoundingBoxes, image):
-    #Filters out all "Blobs" that do not have a ratio of white to black pixels between 0.5-0.9:0
+def filterLength2WidthRatio(goodBoundingBoxes, lowLengthToWidthRatio, highLengthToWidthRatio):
+    #Filters out all "Blobs" with length to width ratios not between lowLengthToWidthRatio and highLengthToWidthRatio
+    betterBoundingBoxes = []          
+    for box in goodBoundingBoxes:
+        width =  box[2]
+        height =  box[3]
+        if lowLengthToWidthRatio < width/ height < highLengthToWidthRatio:
+            betterBoundingBoxes = betterBoundingBoxes +  [box]
+    return betterBoundingBoxes
+
+def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, blackToWhiteRatioMax):
+    #Filters out all "Blobs" that do not have a ratio of white to black pixels between blackToWhiteRatioMin - blackToWhiteRatioMax 
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
         tempImage = image[y:y+height, x:x+width]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
         
-        if 0.4 < (numberOfWhitePixels + 0.0)/((width*height - numberOfWhitePixels+ 0.0)) < 1.0:#number of white pixels for every black pixel
+        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels + 0.0) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
-def filterTopHalfBlack2WhiteRatio(goodBoundingBoxes, image):
-    #Filters out all "Blobs" that do not have a ratio of white to black pixels between .1 and .75 in the top half of the "Blob" this eliminates upside down and sideways U-shapes
+def filterTopHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, blackToWhiteRatioMax):
+    #Filters out all "Blobs" that do not have a ratio of white to black pixels between blackToWhiteRatioMin and blackToWhiteRatioMax in the top half of the "Blob" this eliminates upside down and sideways U-shapes
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
         tempImage = image[y:y+height/2, x:x+width]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
         whitePixelsPerBlackPixel = (numberOfWhitePixels + 0.0)/(width*(height/2)-numberOfWhitePixels + 0.0)#number of white pixels for every black pixel
-        if .3 < whitePixelsPerBlackPixel < .9:
+        if blackToWhiteRatioMin < whitePixelsPerBlackPixel < blackToWhiteRatioMax:
             betterBoundingBoxes = betterBoundingBoxes + [box]
         
     return betterBoundingBoxes
 
-def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image):
-    #Filters out all "Blobs" that do not have a ratio of white to black pixels between .6 and .8 in the left half of the "Blob" this eliminates upside down and sideways U-shapes
+def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, blackToWhiteRatioMax):
+    #Filters out all "Blobs" that do not have a ratio of white to black pixels between blackToWhiteRatioMin and blackToWhiteRatioMax in the left half of the "Blob" this eliminates upside down and sideways U-shapes
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
         tempImage = image[y:y+height, x:x+width/2]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
         whitePixelsPerBlackPixel = (numberOfWhitePixels + 0.0)/(width*(height/2)-numberOfWhitePixels + 0.0)#number of white pixels for every black pixel
-        if .4 < whitePixelsPerBlackPixel < 1.0:
+        if blackToWhiteRatioMin < whitePixelsPerBlackPixel < blackToWhiteRatioMax:
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
-def filterByTemplateMatch(goodBoundingBoxes, image):
+def filterByUShapeTemplateMatch(goodBoundingBoxes, image):
     #Creates and matches a U shape template over "Blobs" that are passed in; Returns blobs that are over 70%(I think %) similar to the template
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
@@ -121,30 +122,6 @@ def filterByTemplateMatch(goodBoundingBoxes, image):
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
-def getLargestBoundingBox(goodBoundingBoxes):
-    #gets the largest U shape because the biggest one will be the most direct one to shoot for
-    if len(goodBoundingBoxes) == 0:
-        return 1000
-    elif len(goodBoundingBoxes) == 1:
-        return goodBoundingBoxes[0]
-    elif len(goodBoundingBoxes) == 2:
-        firstArea = goodBoundingBoxes[0][2]*goodBoundingBoxes[0][3]
-        secondArea = goodBoundingBoxes[1][2]*goodBoundingBoxes[1][3]
-        if firstArea > secondArea:
-            return goodBoundingBoxes[0]
-        else:
-            return goodBoundingBoxes[1]
-    elif len(goodBoundingBoxes) == 3:
-        firstArea = goodBoundingBoxes[0][2]*goodBoundingBoxes[0][3]
-        secondArea = goodBoundingBoxes[1][2]*goodBoundingBoxes[1][3]
-        thirdArea = goodBoundingBoxes[2][2]*goodBoundingBoxes[2][3]
-        if firstArea > secondArea and firstArea > thirdArea:
-            return goodBoundingBoxes[0]
-        elif secondArea  > firstArea and secondArea > thirdArea:
-            return goodBoundingBoxes[1]
-        else:
-            return goodBoundingBoxes[2]
-
 def getDistanceUShapeIsFromTarget(UShape):
     #Calculates how far away the Ushape is from the target spot in the image
     if UShape != 1000:
@@ -154,7 +131,21 @@ def getDistanceUShapeIsFromTarget(UShape):
         return distance
     else:
         return 1000
-    
-distance = main()
-print distance
 
+for imgFileName in os.listdir(images):    
+
+    fullFileName = os.path.join(images, imgFileName)
+    img = cv2.imread(fullFileName)
+    
+    cv2.imshow("Image", img)
+    if cv2.waitKey(0) == ord('q'):
+        cv2.destroyAllWindows()
+        break
+    
+    cv2.destroyAllWindows()
+    
+    upperHighGoalTarget = findUpperHighGoalTarget(img)
+    print len(upperHighGoalTarget)
+    print
+    print "-----------------------------------"
+    
