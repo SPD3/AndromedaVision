@@ -1,8 +1,21 @@
 import cv2
 import numpy as np
 import os
+import math
 
 images = "C:\\Users\\admin\\Pictures\\2017VisionExample\\Vision Images\\LED Boiler"
+m_centerXOfImage = 250 #Need to load in actual Numbers from Camera Calibration
+m_centerYOfImage = 250 #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraX = 10 #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraY = 10 #Need to load in actual Numbers from Camera Calibration
+m_heightOfHighGoalTarget = 10 #Need to get actual number from manual
+m_heightOfLiftTarget = .1 #Need to get actual number from manual
+m_heightOfCamera = 2 #Need to get actual number from Robot
+m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
+m_heightOfLiftTargetFromCamera = m_heightOfCamera - m_heightOfLiftTarget
+m_widthOfLift = 5 #Need to get actual number from manual; Top Left corner of retroReflective to topLeftCornerOfRetroReflective
+m_widthOfRetroReflectiveToLift = m_widthOfLift/2
+
 def null(x):
     pass
 
@@ -138,7 +151,7 @@ def findHighGoalTarget(img):
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
     #print
     #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
-    return correctSizeList
+    return correctSizeList #THIS NEEDS TO BE THE BOUNDING BOX OF THE UPPER PART OF THE HIGH GOAL
     
 def prepareImage(image):
     #Cancels out very small bits of noice by blurring the image and then eroding it
@@ -235,39 +248,22 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMi
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
-def filterByUShapeTemplateMatch(goodBoundingBoxes, image):
+#def filterByUShapeTemplateMatch(goodBoundingBoxes, image):
     #Creates and matches a U shape template over "Blobs" that are passed in; Returns blobs that are over 70%(I think %) similar to the template
-    betterBoundingBoxes = []
-    for box in goodBoundingBoxes:
-        x,y,width,height = box
-        tempImage = image[y:y+height+1, x:x+width+1]
-        template = np.zeros((width,height,3), np.uint8)
-        cv2.rectangle(template,(0,0),(height/7,height), (0,255,0),-1)
-        cv2.rectangle(template,(0,height- height/7),(width,height),(0,255,0),-1)
-        cv2.rectangle(template,(width - height/7,0),(width,height),(0,255,0),-1)
-        binaryTemplate = filterColors(template)
-        results = cv2.matchTemplate(tempImage,binaryTemplate,cv2.TM_CCOEFF_NORMED)
-        minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(results)
-        if maxVal > .7:
-            betterBoundingBoxes = betterBoundingBoxes + [box]
-    return betterBoundingBoxes
-
-def getDistanceUShapeIsFromTarget(UShape):
-    #Calculates how far away the Ushape is from the target spot in the image
-    if UShape != 1000:
-        x = UShape[0]
-        target = 512/2
-        distance = target - x
-        return distance
-    else:
-        return 1000
-
-def drawBoundingBoxes (image, goodBoundingBoxes):
-    copy = image.copy()
-    for box in goodBoundingBoxes:
-        x,y,width,height = box
-        cv2.rectangle(copy,(x,y),(x + width, y + height),(0,0,255), 3)
-    cv2.imshow("Processed Image", copy)
+ #   betterBoundingBoxes = []
+  #  for box in goodBoundingBoxes:
+   #     x,y,width,height = box
+    #    tempImage = image[y:y+height+1, x:x+width+1]
+     #   template = np.zeros((width,height,3), np.uint8)
+      #  cv2.rectangle(template,(0,0),(height/7,height), (0,255,0),-1)
+       # cv2.rectangle(template,(0,height- height/7),(width,height),(0,255,0),-1)
+        #cv2.rectangle(template,(width - height/7,0),(width,height),(0,255,0),-1)
+#        binaryTemplate = filterColors(template)
+ #       results = cv2.matchTemplate(tempImage,binaryTemplate,cv2.TM_CCOEFF_NORMED)
+  #      minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(results)
+   #     if maxVal > .7:
+    #        betterBoundingBoxes = betterBoundingBoxes + [box]
+    #return betterBoundingBoxes
 
 def filterByDistanceBetweenTargets(goodBoundingBoxes):
     betterBoundingBoxes = []
@@ -295,42 +291,109 @@ def filterByDistanceBetweenTargets(goodBoundingBoxes):
                 print "It did not pass the first Y test secondY - y was: ", secondY - y, "and the y difference was: ", yDifference
                         
     return betterBoundingBoxes
+
+
+
+
+
+#This is a tuning function
+
+def drawBoundingBoxes (image, goodBoundingBoxes):
+    copy = image.copy()
+    for box in goodBoundingBoxes:
+        x,y,width,height = box
+        cv2.rectangle(copy,(x,y),(x + width, y + height),(0,0,255), 3)
+    cv2.imshow("Processed Image", copy)
+
+
+
+
+#These are the Math functions
+
+def getAngleToTurnFromOpticalAxis(boundingBoxOfTarget):
+    x,y,width,height = boundingBoxOfTarget
+    distanceFromCenterX = x - m_centerXOfImage
+    angleToTurn = math.atan(distanceFromCenterX/m_focalLengthOfCameraX)
+    return angleToTurn
+
+def getDistanceAwayHighGoal(boundingBoxOfTarget):
+    x,y,width,height = boundingBoxOfTarget
+    distanceFromCenterY = m_centerYofImage - y
+    elevationAngle = math.atan(distanceFromCenterY/m_focalLengthOfCameraY)
+    distanceAwayHighGoal = m_heightOfHighGoalTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
+    return distanceAwayHighGoal
+
+def getDistanceAwayLift(boundingBoxOfTarget):
+    x,y,width,height = boundingBoxOfTarget
+    distanceFromCenterY = y - m_centerYOfImage
+    print 'DebugY ', y
+    print 'DebugDistanceFromCenterY', distanceFromCenterY
+    ratio = (distanceFromCenterY + 0.0)/(m_focalLengthOfCameraY + 0.0)
+    elevationAngle = math.atan(ratio)
+    distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
+    #print locals()
+    return distanceAwayLift
+
+def getAngleToTurnLift(boundingBoxesOfTargets):
+    firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
+    secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
+    if firstDistanceAway > secondDistanceAway:
+        longerDistance = firstDistanceAway
+        shorterDistance = secondDistanceAway
+        furtherBoundingBox = boundingBoxesOfTargets[0]
+    else:
+        longerDistance = secondDistanceAway
+        shorterDistance = firstDistanceAway
+        furtherBoundingBox = boundingBoxesOfTargets[1]
+    
+    angleToCenterLongerDistance = getAngleToTurnFromOpticalAxis(furtherBoundingBox)
+    ratio = ((math.pow(longerDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(shorterDistance, 2))/(2*longerDistance*m_widthOfLift)) #Using law of coesins
+    print 'DebugLongerDistance',longerDistance
+    print 'DebugShorterDistance',shorterDistance
+    print 'DebugRatio',ratio
+    oppositeAngle = math.acos(ratio)
+    angleDeltaToCenterLift = 90 - oppositeAngle
    
-#setupImageWindow()
+    if angleToCenterLongerDistance > 0: #(angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
+        angleToTurn = -angleDeltaToCenterLift + angleToCenterLongerDistance
+    else:
+        angleToTurn = angleDeltaToCenterLift + angleToCenterLongerDistance
+        
+    return angleToTurn
 
-#for imgFileName in os.listdir(images):    
+def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
+    firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
+    secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
+    if firstDistanceAway > secondDistanceAway:
+        longerDistance = firstDistanceAway
+        shorterDistance = secondDistanceAway
+        closerBoundingBox = boundingBoxesOfTargets[1]
+    else:
+        longerDistance = secondDistanceAway
+        shorterDistance = firstDistanceAway
+        closerBoundingBox = boundingBoxesOfTargets[0]
 
- #   fullFileName = os.path.join(images, imgFileName)
-  #  img = cv2.imread(fullFileName)
-    
-   # cv2.imshow("Original Image", img)
-#    if cv2.waitKey(0) == ord('q'):
-#        break
-    
-    
-    #HighGoalTarget = findHighGoalTarget(img)
-#    if HighGoalTarget is None:
- #       break
-  #  print len(HighGoalTarget)
-   # print
-    #print "-----------------------------------"
-#img = cv2.imread("C:\Users\Public\Pictures\StraitOnImage.png")
+    angleToCenterCloserTarget = getAngleToTurnFromOpticalAxis(closerBoundingBox)
+    distanceToMoveLaterallyToCloserTarget = math.sin(angleToCenterCloserTarget)*shorterDistance
+    distanceToDriveForward = math.cos(angleToCenterCloserTarget)*shorterDistance
+    angleOfCloserTarget = math.acos((math.pow(shorterDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(longerDistance, 2))/(2*shorterDistance*m_widthOfLift)) #Using law of coesins
+    if (angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
+        distanceToMoveLaterallyToLift = distanceToMoveLaterallyToCloserTarget - m_widthOfRetroReflectiveToLift
+    else:
+        distanceToMoveLaterallyToLift = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
+    return distanceToMoveLaterallyToLift, distanceToDriveForward
 
-img1 = cv2.imread("C:\Users\Public\Pictures\StraitOnImage.png")
-img2 = cv2.imread("C:\Users\Public\Pictures\Left60DegreesImage.png")
-img3 = cv2.imread("C:\Users\Public\Pictures\Right60DegreesImage.png")
+def main(boundingBoxesOfTargets):
+    angleToTurnLift = getAngleToTurnLift(boundingBoxesOfTargets)
+    distanceToMoveLaterally, distanceToDriveForward = getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets)
 
-correctColorImage1 = filterColors(img1,92,69,163,112,196,255)
-correctColorImage2 = filterColors(img2,92,69,163,112,196,255)
-correctColorImage3 = filterColors(img3,92,69,163,112,196,255)
+    print 'angleToTurnLift',angleToTurnLift
+    print 'distanceToMoveLaterally',distanceToMoveLaterally
+    print 'distanceToDriveForward', distanceToDriveForward
 
-cv2.imshow("Original 1",img1)
-cv2.imshow("Original 2",img2)
-cv2.imshow("Original 3",img3)
+boundingBoxesOfTargets1 = [[150,255,25,100],[350,260,25,100]]
+boundingBoxesOfTargets2 = [[150,400,25,100],[350,390,25,100]]
 
-cv2.imshow("New 1",correctColorImage1)
-cv2.imshow("New 2",correctColorImage2)
-cv2.imshow("New 3",correctColorImage3)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
- 
+main(boundingBoxesOfTargets1)
+main(boundingBoxesOfTargets2)
+
