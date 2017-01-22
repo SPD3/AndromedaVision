@@ -4,16 +4,16 @@ import os
 import math
 
 images = "C:\\Users\\admin\\Pictures\\2017VisionExample\\Vision Images\\LED Boiler"
-m_centerXOfImage = 250 #Need to load in actual Numbers from Camera Calibration
-m_centerYOfImage = 250 #Need to load in actual Numbers from Camera Calibration
-m_focalLengthOfCameraX = 10 #Need to load in actual Numbers from Camera Calibration
-m_focalLengthOfCameraY = 10 #Need to load in actual Numbers from Camera Calibration
+m_centerXOfImage = 1640 #Need to load in actual Numbers from Camera Calibration
+m_centerYOfImage = 1232 #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraX = 3237.37 #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraY = 3237.37 #Need to load in actual Numbers from Camera Calibration
 m_heightOfHighGoalTarget = 10 #Need to get actual number from manual
-m_heightOfLiftTarget = .1 #Need to get actual number from manual
-m_heightOfCamera = 2 #Need to get actual number from Robot
+m_heightOfLiftTarget = 15.75 #Actual Number From manual
+m_heightOfCamera = 18 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfCamera - m_heightOfLiftTarget
-m_widthOfLift = 5 #Need to get actual number from manual; Top Left corner of retroReflective to topLeftCornerOfRetroReflective
+m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflective to Top right Corner Of RetroReflective
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
 
 def null(x):
@@ -265,7 +265,7 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMi
     #        betterBoundingBoxes = betterBoundingBoxes + [box]
     #return betterBoundingBoxes
 
-def filterByDistanceBetweenTargets(goodBoundingBoxes):
+def filterByDistanceBetweenTargetsHighGoal(goodBoundingBoxes):
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
@@ -282,6 +282,33 @@ def filterByDistanceBetweenTargets(goodBoundingBoxes):
                 
                     if secondWidth-15 < width < secondWidth + 15 or width-10 < secondWidth < width + 10:
                         print "It passed the second X test"
+                        betterBoundingBoxes = betterBoundingBoxes + [box]
+                    else:
+                        print "It did not pass the second X test, width = ", width, "and secondWidth = ", secondWidth
+                else:
+                     print "It did not pass the first X test x was: ", x, "and it had to be between ", secondX - 25, "and", secondX + 25
+            else:
+                print "It did not pass the first Y test secondY - y was: ", secondY - y, "and the y difference was: ", yDifference
+                        
+    return betterBoundingBoxes
+
+def filterByDistanceBetweenTargetsLift(goodBoundingBoxes):
+    betterBoundingBoxes = []
+    for box in goodBoundingBoxes:
+        x,y,width,height = box
+        for secondBox in goodBoundingBoxes:
+            if box == secondBox:
+                continue
+            secondX,secondY,secondWidth,secondHeight = secondBox
+            xDifference = width*3.125 #Constant of proportionality of the ratio of width of the retro Reflective to the width between the retro targets
+            
+            if 0 < secondX - x < xDifference:
+                print "It passes the X test"
+                if secondY - 25 < x <secondY + 25 :
+                    print "It passed the first Y test"
+                
+                    if secondHeight-15 < width < secondHeight + 15 or height-10 < secondHeight < height + 10:
+                        print "It passed the second Y test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                     else:
                         print "It did not pass the second X test, width = ", width, "and secondWidth = ", secondWidth
@@ -310,14 +337,14 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
 
 #These are the Math functions
 
-def getAngleToTurnFromOpticalAxis(boundingBoxOfTarget):
-    x,y,width,height = boundingBoxOfTarget
-    distanceFromCenterX = x - m_centerXOfImage
-    angleToTurn = math.atan(distanceFromCenterX/m_focalLengthOfCameraX)
-    return angleToTurn
+def getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget):
+    x,y,width,height = boundingBoxOfTarget[0]
+    distanceFromCenterX = x - m_centerXOfImage + width/2
+    radiansToTurn = math.atan(distanceFromCenterX/m_focalLengthOfCameraX)
+    return radiansToTurn
 
 def getDistanceAwayHighGoal(boundingBoxOfTarget):
-    x,y,width,height = boundingBoxOfTarget
+    x,y,width,height = boundingBoxOfTarget[0]
     distanceFromCenterY = m_centerYofImage - y
     elevationAngle = math.atan(distanceFromCenterY/m_focalLengthOfCameraY)
     distanceAwayHighGoal = m_heightOfHighGoalTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
@@ -326,15 +353,11 @@ def getDistanceAwayHighGoal(boundingBoxOfTarget):
 def getDistanceAwayLift(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget
     distanceFromCenterY = y - m_centerYOfImage
-    print 'DebugY ', y
-    print 'DebugDistanceFromCenterY', distanceFromCenterY
-    ratio = (distanceFromCenterY + 0.0)/(m_focalLengthOfCameraY + 0.0)
-    elevationAngle = math.atan(ratio)
-    distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
-    #print locals()
+    elevationTangent = (distanceFromCenterY + 0.0)/(m_focalLengthOfCameraY + 0.0)
+    distanceAwayLift = m_heightOfLiftTargetFromCamera/elevationTangent #Finding Adjacent; open to change
     return distanceAwayLift
 
-def getAngleToTurnLift(boundingBoxesOfTargets):
+def getRadiansToTurnLift(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
     secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
     if firstDistanceAway > secondDistanceAway:
@@ -348,18 +371,16 @@ def getAngleToTurnLift(boundingBoxesOfTargets):
     
     angleToCenterLongerDistance = getAngleToTurnFromOpticalAxis(furtherBoundingBox)
     ratio = ((math.pow(longerDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(shorterDistance, 2))/(2*longerDistance*m_widthOfLift)) #Using law of coesins
-    print 'DebugLongerDistance',longerDistance
-    print 'DebugShorterDistance',shorterDistance
-    print 'DebugRatio',ratio
     oppositeAngle = math.acos(ratio)
-    angleDeltaToCenterLift = 90 - oppositeAngle
+    angleDeltaToCenterLift = math.pi/2 - oppositeAngle
    
     if angleToCenterLongerDistance > 0: #(angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
-        angleToTurn = -angleDeltaToCenterLift + angleToCenterLongerDistance
+        radiansToTurn = -angleDeltaToCenterLift + angleToCenterLongerDistance
     else:
-        angleToTurn = angleDeltaToCenterLift + angleToCenterLongerDistance
-        
-    return angleToTurn
+        radiansToTurn = angleDeltaToCenterLift + angleToCenterLongerDistance
+    
+    degreesAngleToTurn = radiansToTurn*180/math.pi
+    return radiansToTurn
 
 def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
@@ -383,17 +404,18 @@ def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
         distanceToMoveLaterallyToLift = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
     return distanceToMoveLaterallyToLift, distanceToDriveForward
 
-def main(boundingBoxesOfTargets):
-    angleToTurnLift = getAngleToTurnLift(boundingBoxesOfTargets)
-    distanceToMoveLaterally, distanceToDriveForward = getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets)
+def main():
+    timestamp, raspiCameraImageHighGoal = getHighGoalCameraImage()
+    timestamp, raspiCameraImageLift = getLiftCameraImage()
+    highGoalTarget = findHighGoal(raspiCameraImageHighGoal)
+    iftTargets = findLiftTarget(raspiCameraImageLift)
+    radiansToTurnLift = getRadiansToTurnLift(liftTargets)
+    radiansToTurnHighGoal = getRadiansToTurnHighGoal(highGoalTarget)
+    distanceAwayHighGoal = getDistanceAwayHighGoal(highGoalTarget)
+    distanceToMoveLaterally, distanceToDriveForward = getDistanceToDriveLaterallyAndForward(liftTargets)
+    
+    
+    
 
-    print 'angleToTurnLift',angleToTurnLift
-    print 'distanceToMoveLaterally',distanceToMoveLaterally
-    print 'distanceToDriveForward', distanceToDriveForward
 
-boundingBoxesOfTargets1 = [[150,255,25,100],[350,260,25,100]]
-boundingBoxesOfTargets2 = [[150,400,25,100],[350,390,25,100]]
-
-main(boundingBoxesOfTargets1)
-main(boundingBoxesOfTargets2)
-
+    
