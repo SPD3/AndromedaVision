@@ -2,10 +2,17 @@ import cv2
 import numpy as np
 import os
 import math
+from picamera.array import PiRGBArray
+import picamera
+import time
+import sys
+from networktables import NetworkTables
+import logging
 
-images = "C:\\Users\\admin\\Pictures\\2017VisionExample\\Vision Images\\LED Boiler"
-m_centerXOfImage = 1640 #Need to load in actual Numbers from Camera Calibration
-m_centerYOfImage = 1232 #Need to load in actual Numbers from Camera Calibration
+m_centerXOfImage = 320 #Need to load in actual Numbers from Camera Calibration
+m_centerYOfImage = 240 #Need to load in actual Numbers from Camera Calibration
+m_xResolution = m_centerXOfImage*2 #Need to load in actual Numbers from Camera Calibration
+m_yResolution = m_centerYOfImage*2 #Need to load in actual Numbers from Camera Calibration
 m_focalLengthOfCameraX = 3237.37 #Need to load in actual Numbers from Camera Calibration
 m_focalLengthOfCameraY = 3237.37 #Need to load in actual Numbers from Camera Calibration
 m_heightOfHighGoalTarget = 10 #Need to get actual number from manual
@@ -15,7 +22,41 @@ m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfCamera - m_heightOfLiftTarget
 m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflective to Top right Corner Of RetroReflective
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
+m_xOffsetOfCamera = 5 #Need to get actual number from Robot
+m_yOffsetOfCamera = 10 #Need to get actual number from Robot
+m_camera = picamera.PiCamera()
 
+def cameraStreamInit():
+    m_camera.resolution = (m_xResolution, m_yResolution)
+    m_camera.framerate = 32
+    m_camera.shutter_speed = 10000
+    m_camera.iso = 100
+    m_camera.exposure_mode = 'off'
+    m_camera.awb_gains = 1
+    rawCapture = PiRGBArray(m_camera, size=(m_xResolution, m_yResolution))
+ 
+    # allow the camera to warmup
+    time.sleep(0.1)
+    return rawCapture
+    
+def getCameraStream(rawCapture):
+    for frame in m_camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
+        timestamp = m_camera.timestamp
+        image = frame.array
+        cv2.imshow("Image",image)
+        aGain = m_camera.analog_gain
+        dGain = m_camera.digital_gain
+        shutterSpeed = m_camera.exposure_speed
+        print
+        print aGain
+        print dGain
+        print shutterSpeed
+        print
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        rawCapture.truncate(0)
+        return timestamp,image
+    
 def null(x):
     pass
 
@@ -64,11 +105,11 @@ def findLiftTarget(img):
    # print 
     #print
 #    print len(correctSizeList)
-    cv2.imshow("Original Image", preparedImage)
+    #cv2.imshow("Original Image", preparedImage)
     drawBoundingBoxes(img, correctSizeList)
     for box in correctSizeList:
         print "The width is: ", box[2]
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
     correctWidth = filterWidthHighGoalTarget(correctSizeList)
     print len(correctWidth)
     #drawBoundingBoxes(img, correctSizeList)
@@ -90,8 +131,11 @@ def findLiftTarget(img):
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
     #print
     #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
-    return correctSizeList
-    
+    filteredList = correctSizeList
+    if filteredList == 2:
+        return True, filteredList 
+    else:
+        return False, filteredList
 
 def findHighGoalTarget(img):
      
@@ -120,39 +164,42 @@ def findHighGoalTarget(img):
     correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,0,10)
     print len(correctLeftHalfBlack2WhiteRatioList)
 #    drawBoundingBoxes(img, correctLeftHalfBlack2WhiteRatioList)
-    while True:
-        minRatio = cv2.getTrackbarPos('minRatio','Processed Image')
-        maxRatio = cv2.getTrackbarPos('maxRatio','Processed Image')
+    #while True:
+     #   minRatio = cv2.getTrackbarPos('minRatio','Processed Image')
+      #  maxRatio = cv2.getTrackbarPos('maxRatio','Processed Image')
         #minV = cv2.getTrackbarPos('minV','Processed Image')
         #maxH = cv2.getTrackbarPos('maxH','Processed Image')
         #maxS = cv2.getTrackbarPos('maxS','Processed Image')
         #maxV = cv2.getTrackbarPos('maxV','Processed Image')
         
-        correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,minRatio,maxRatio)
+       # correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,minRatio,maxRatio)
         #drawBoundingBoxes(preparedImage, correctLeftHalfBlack2WhiteRatioList)
         
         
-        key = cv2.waitKey(0)
-        if key == ord('q'): # quit
-            return None
-        elif key == ord('g'): # good
-            break
+        #key = cv2.waitKey(0)
+#        if key == ord('q'): # quit
+ #           return None
+  #      elif key == ord('g'): # good
+   #         break
         # Try again on any other key
-    print
-    print minRatio
-    print maxRatio
-    print 
-    print 
-    print 
-    print 
-    print
+    #print
+#    print minRatio
+ #   print maxRatio
+  #  print 
+   # print 
+    #print 
+#    print 
+ #   print
     #correctDistanceBetweenTargets = filterByDistanceBetweenTargets(correctBlack2WhiteRatioList)
     #print len(correctDistanceBetweenTargets)
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
     #print
     #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
-    return correctSizeList #THIS NEEDS TO BE THE BOUNDING BOX OF THE UPPER PART OF THE HIGH GOAL
-    
+    filteredList = correctSizeList#THIS NEEDS TO BE THE BOUNDING BOX OF THE UPPER PART OF THE HIGH GOAL
+    if filteredList == 1:
+        return True, filteredList 
+    else:
+        return False, filteredList
 def prepareImage(image):
     #Cancels out very small bits of noice by blurring the image and then eroding it
     erodedImage = cv2.erode(image,(3,3))
@@ -330,7 +377,7 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
     for box in goodBoundingBoxes:
         x,y,width,height = box
         cv2.rectangle(copy,(x,y),(x + width, y + height),(0,0,255), 3)
-    cv2.imshow("Processed Image", copy)
+    #cv2.imshow("Processed Image", copy)
 
 
 
@@ -403,19 +450,45 @@ def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
     else:
         distanceToMoveLaterallyToLift = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
     return distanceToMoveLaterallyToLift, distanceToDriveForward
-
+def initNetworkTables():
+    logging.basicConfig(level=logging.DEBUG)
+    ip = "10.49.8.77"
+    NetworkTables.initialize(server=ip)
+    sd = NetworkTables.getTable("VisionProcessing")
+    return sd
+    
+def putDataOnNetworkTablesLift(networkTable,timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
+    networkTable.putNumber('radiansToTurnLift', radiansToTurnLift)
+    networkTable.putNumber('distanceToMoveLaterallyLift', distanceToMoveLaterallyLift)
+    networkTable.putNumber('distanceToDriveForwardLift', distanceToDriveForwardLift)
+    networkTable.putNumber('timestampLift', timestampLift)
+    
+def putDataOnNetworkTablesHighGoal(networkTable,timestampHighGoal,radiansToTurnHighGoal,distanceAwayHighGoal):
+    networkTable.putNumber('radiansToTurnHighGoal', radiansToTurnHighGoal)
+    networkTable.putNumber('distanceAwayHighGoal', distanceAwayHighGoal)
+    networkTable.putNumber('timestampHighGoal', timestampHighGoal)
+    
 def main():
-    timestamp, raspiCameraImageHighGoal = getHighGoalCameraImage()
-    timestamp, raspiCameraImageLift = getLiftCameraImage()
-    highGoalTarget = findHighGoal(raspiCameraImageHighGoal)
-    iftTargets = findLiftTarget(raspiCameraImageLift)
-    radiansToTurnLift = getRadiansToTurnLift(liftTargets)
-    radiansToTurnHighGoal = getRadiansToTurnHighGoal(highGoalTarget)
-    distanceAwayHighGoal = getDistanceAwayHighGoal(highGoalTarget)
-    distanceToMoveLaterally, distanceToDriveForward = getDistanceToDriveLaterallyAndForward(liftTargets)
-    
-    
-    
+    initializedCameraStream = cameraStreamInit()
+    sd = initNetworkTables()
+    while True:
+        timestamp,cameraStream = getCameraStream(initializedCameraStream)
+        retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
+        retLift,liftTargets = findLiftTarget(cameraStream)
+        if retLift == True:
+            radiansToTurnLift = getRadiansToTurnLift(liftTargets)
+            distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToDriveLaterallyAndForward(liftTargets)
+            putDataOnNetworkTablesLift(sd,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
+        else:
+            putDataOnNetworkTablesLift(sd,timestamp,1000,1000,1000)
+        if retHighGoal == True:
+            radiansToTurnHighGoal = getRadiansToTurnHighGoal(highGoalTarget)
+            distanceAwayHighGoal = getDistanceAwayHighGoal(highGoalTarget)
+            putDataOnNetworkTablesHighGoal(sd,radiansToTurnHighGoal,distanceAwayHighGoal)
+        else:
+            putDataOnNetworkTablesHighGoal(sd,timestamp,1000,1000)
+        
+main()
 
 
     
