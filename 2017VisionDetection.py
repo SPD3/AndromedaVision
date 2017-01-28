@@ -397,25 +397,26 @@ def getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget):
     
     return radiansToTurn
 
-def getRadiansToTurnHighGoal(boundingBoxOfTarget):
-    radiansToTurnWithoutAccountingForOffset = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
+def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
+    radiansToTurnFromCamera = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
     distanceAwayFromHighGoal = getDistanceAwayHighGoal(boundingBoxOfTarget)
-    oppositeSide = math.tan(radiansToTurnWithoutAccountingForOffset)*distanceAwayFromHighGoal
-    centerOfRobotDistance = distanceAwayFromHighGoal + m_forwardOffsetOfHighGoalCamera
+    oppositeSide = math.sin(radiansToTurnFromCamera)*distanceAwayFromHighGoal
+    adjacentSide = math.cos(radiansToTurnFromCamera)*distanceAwayFromHighGoal
+    centerOfRobotAdjacent = adjacentSide + m_forwardOffsetOfHighGoalCamera
     centerOfRobotOppositeSide = oppositeSide + m_lateralRightOffsetOfHighGoalCamera
-    shooterDistanceAway = centerOfRobotDistance - m_forwardOffsetOfShooter
-    shooterOppositeAway = centerOfRobotOppositeSide - m_lateralRightOffsetOfShooter
-    angleToTurnFromShooter = math.atan(shooterOppositeAway/shooterDistanceAway)
-    return angleToTurnFromShooter
+    centerOfRobotHypotenuse = math.sqrt(centerOfRobotAdjacent*centerOfRobotAdjacent + centerOfRobotOppositeSide*centerOfRobotOppositeSide)
+    angleToTurnFromCenterOfRobot = math.atan(centerOfRobotOppositeSide/centerOfRobotAdjacent)
+    deltaAngleFromShooter = math.atan(m_lateralRightOffsetOfShooter/centerOfRobotHypotenuse)
+    angleToTurnFromShooter = angleToTurnFromCenterOfRobot - deltaAngleFromShooter
+    shooterDistanceAway = math.sqrt(centerOfRobotHypotenuse*centerOfRobotHypotenuse + m_lateralRightOffsetOfShooter*m_lateralRightOffsetOfShooter)
+    return angleToTurnFromShooter, shooterDistanceAway
 
 def getDistanceAwayHighGoal(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget[0]
     distanceFromCenterY = m_centerYofImage - y
     elevationAngle = math.atan(distanceFromCenterY/m_focalLengthOfCameraY)
-    distanceAwayHighGoalWithoutAccountingForOffset = m_heightOfHighGoalTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
-    distanceAwayHighGoalFromCenterOfRobot = distanceAwayHighGoalWithoutAccountingForOffset + m_forwardOffsetOfHighGoalCamera
-    distanceAwayHighGoalFromShooter = distanceAwayHighGoalFromCenterOfRobot - m_forwardOffsetOfShooter
-    return distanceAwayHighGoalFromShooter
+    distanceAwayHighGoalFromCamera = m_heightOfHighGoalTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
+    return distanceAwayHighGoalFromCamera
 
 def getDistanceAwayLift(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget
@@ -424,35 +425,51 @@ def getDistanceAwayLift(boundingBoxOfTarget):
     distanceAwayLift = m_heightOfLiftTargetFromCamera/elevationTangent #Finding Adjacent; open to change
     return distanceAwayLift
 
-def getRadiansToTurnLift(boundingBoxesOfTargets):
+def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
     secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
     if firstDistanceAway > secondDistanceAway:
-        longerDistance = firstDistanceAway
-        shorterDistance = secondDistanceAway
+        furtherTargetHypotenuse = firstDistanceAway
+        closerTargetHypotenuse = secondDistanceAway
         furtherBoundingBox = boundingBoxesOfTargets[0]
+        closerBoundingBox = boundingBoxesOfTargets[1] 
     else:
-        longerDistance = secondDistanceAway
-        shorterDistance = firstDistanceAway
+        furtherTargetHypotenuse = secondDistanceAway
+        closerTargetHypotenuse = firstDistanceAway
         furtherBoundingBox = boundingBoxesOfTargets[1]
-    
-    angleToCenterLongerDistance = getAngleToTurnFromOpticalAxis(furtherBoundingBox)
-    ratio = ((math.pow(longerDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(shorterDistance, 2))/(2*longerDistance*m_widthOfLift)) #Using law of coesins
-    oppositeAngle = math.acos(ratio)
-    angleDeltaToCenterLift = math.pi/2 - oppositeAngle
-   
-    if angleToCenterLongerDistance > 0: #(angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
-        radiansToTurnWithoutAccountingForOffset = -angleDeltaToCenterLift + angleToCenterLongerDistance
+        closerBoundingBox = boundingBoxesOfTargets[0]
+
+    if furtherBoundingBox[0] > closerBoundingBox[0]:
+        directionToTurn = -1
+        directionToSlideLaterally = 1
     else:
-        radiansToTurnWithoutAccountingForOffset = angleDeltaToCenterLift + angleToCenterLongerDistance
+        directionToTurn = 1   
+        directionToSlideLaterally = -1
+        
+    angleFromOpticalAxisToFurtherTarget = getAngleToTurnFromOpticalAxis(furtherBoundingBox)
+    angleFromOpticalAxisToCloserTarget = getAngleToTurnFromOpticalAxis(closerBoundingBox)
+    furtherTargetOpposite = math.sin(angleFromOpticalAxisToFurtherTarget)*furtherTargetHypotenuse
+    furtherTargetAdjacent = math.cos(angleFromOpticalAxisToFurtherTarget)*furtherTargetHypotenuse
+    closerTargetOpposite = math.sin(angleFromOpticalAxisToCloserTarget)*closerTargetHypotenuse
+    closerTargetAdjacent = math.cos(angleFromOpticalAxisToCloserTarget)*closerTargetHypotenuse
+    centerOfRobotFurtherTargetOpposite = furtherTargetOpposite + m_lateralRightOffsetOfLiftCamera
+    centerOfRobotFurtherTargetAdjacent = furtherTargetAdjacent + m_forwardOffsetOfLiftCamera
+    centerOfRobotCloserTargetOpposite = closerTargetOpposite + m_lateralRightOffsetOfLiftCamera
+    centerOfRobotCloserTargetAdjacent = closerTargetAdjacent + m_forwardOffsetOfLiftCamera
+    centerOfRobotFurtherDistanceHypotenuse = math.sqrt(centerOfRobotFurtherTargetOpposite*centerOfRobotFurtherTargetOpposite + centerOfRobotFurtherTargetAdjacent*centerOfRobotFurtherTargetAdjacent)
+    centerOfRobotCloserDistanceHypotenuse = math.sqrt(centerOfRobotCloserTargetOpposite*centerOfRobotCloserTargetOpposite + centerOfRobotCloserTargetAdjacent*centerOfRobotCloserTargetAdjacent)
+    ratio = ((math.pow(centerOfRobotFurtherDistanceHypotenuse, 2) + math.pow(m_widthOfLift, 2) -
+              math.pow(centerOfRobotCloserDistanceHypotenuse, 2))/(2*centerOfRobotFurtherDistanceHypotenuse*m_widthOfLift)) #Using law of coesins
+    oppositeAngle = math.acos(ratio)
+    angleOfFurtherTargetToTargetDistance = math.pi - (math.pi/2 + oppositeAngle)
+    angleFromRobotToFurtherTarget = math.atan(centerOfRobotFurtherTargetOpposite/centerOfRobotFurtherTargetAdjacent)
+    angleToTurn = angleOfFurtherTargetToTargetDistance - angleFromRobotToFurtherTarget
+    centerOfRobotDistanceToDriveForward = math.cos(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
+    angleToTurn = angleToTurn*directionToTurn
+    distanceToSlideLaterally = math.sin(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
+    distanceToSlideLaterally = distanceToSlideLaterally*directionToSlideLaterally
     
-    oppositeSide = math.tan(radiansToTurnWithoutAccountingForOffset)*longerDistance
-    centerOfRobotDistance = longerDistance + m_forwardOffsetOfLiftCamera
-    centerOfRobotOppositeSide = oppositeSide + m_lateralRightOffsetOfLiftCamera
-    gearPlacerDistanceAway = centerOfRobotDistance - m_forwardOffsetOfGearPlacer
-    gearPlacerOpposite = centerOfRobotOppositeSide - m_lateralRightOffsetgearPlacer
-    angleToTurnFromGearPlacer = math.atan(gearPlacerOpposite/gearPlacerDistanceAway)
-    return angleToTurnFromGearPlacer
+    return angleToTurn, centerOfRobotDistanceToDriveForward, distanceToSlideLaterally
 
 def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
@@ -468,17 +485,13 @@ def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
 
     angleToCenterCloserTarget = getAngleToTurnFromOpticalAxis(closerBoundingBox)
     distanceToMoveLaterallyToCloserTarget = math.sin(angleToCenterCloserTarget)*shorterDistance
-    distanceToDriveForwardWithoutAccountingForOffset = math.cos(angleToCenterCloserTarget)*shorterDistance
+    distanceToDriveForwardFromCamera = math.cos(angleToCenterCloserTarget)*shorterDistance
     angleOfCloserTarget = math.acos((math.pow(shorterDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(longerDistance, 2))/(2*shorterDistance*m_widthOfLift)) #Using law of coesins
     if (angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
-        distanceToMoveLaterallyToLiftWithouAccountingForOffset = distanceToMoveLaterallyToCloserTarget - m_widthOfRetroReflectiveToLift
+        distanceToMoveLaterallyFromCamera = distanceToMoveLaterallyToCloserTarget - m_widthOfRetroReflectiveToLift
     else:
-        distanceToMoveLaterallyToLiftWithouAccountingForOffset = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
+        distanceToMoveLaterallyFromCamera = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
 
-    centerOfRobotDistance = distanceToDriveForwardWithoutAccountingForOffset + m_forwardOffsetOfLiftCamera
-    gearPlacerDistance = centerOfRobotDistance - m_forwardOffsetOfgearPlacer
-    centerOfRobotDistanceToMoveLaterallyToLift = distanceToMoveLaterallyToLiftWithouAccountingForOffset + m_lateralRightOffsetOfLiftCamera
-    gearPlacerDistanceToMoveLaterallyToLift = centerOfRobotDistanceToMoveLaterallyToLift - m_lateralRightOffsetOfGearPlacer
     return gearPlacerDistanceToMoveLaterallyToLift, gearPlacerDistance
 
 def initNetworkTables():
@@ -513,9 +526,8 @@ def main():
         else:
             putDataOnNetworkTablesLift(sd,timestamp,1000,1000,1000)
         if retHighGoal == True:
-            radiansToTurnHighGoal = getRadiansToTurnHighGoalAndDistanceAway(highGoalTarget)
-            distanceAwayHighGoal = getDistanceAwayHighGoal
-            putDataOnNetworkTablesHighGoal(sd,radiansToTurnHighGoal,distanceAwayHighGoal)
+            radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
+            putDataOnNetworkTablesHighGoal(sd,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
         else:
             putDataOnNetworkTablesHighGoal(sd,timestamp,1000,1000)
         
