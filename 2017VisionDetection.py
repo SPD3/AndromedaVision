@@ -2,26 +2,37 @@ import cv2
 import numpy as np
 import os
 import math
-from picamera.array import PiRGBArray
-import picamera
+#from picamera.array import PiRGBArray
+#import picamera
 import time
 import sys
-from networktables import NetworkTables
+#from networktables import NetworkTables
 import logging
 
-m_centerXOfImage = 320 #Need to load in actual Numbers from Camera Calibration
-m_centerYOfImage = 240 #Need to load in actual Numbers from Camera Calibration
+#interensic paramaters
+m_cameraCalibrationData = np.load('C:\\Users\\admin\\OpenCV Experiments\\CameraCalibrationData.npz')
+m_cameraMatrix = m_cameraCalibrationData['mtx'] #Need to load in actual Numbers from Camera Calibration
+m_distCoeffs = m_cameraCalibrationData['dist'] #Need to load in actual Numbers from Camera Calibration
+m_centerXOfImage = m_cameraMatrix[0,2] #Need to load in actual Numbers from Camera Calibration
+m_centerYOfImage = m_cameraMatrix[1,2] #Need to load in actual Numbers from Camera Calibration
 m_xResolution = m_centerXOfImage*2 #Need to load in actual Numbers from Camera Calibration
 m_yResolution = m_centerYOfImage*2 #Need to load in actual Numbers from Camera Calibration
-m_focalLengthOfCameraX = 3237.37 #Need to load in actual Numbers from Camera Calibration
-m_focalLengthOfCameraY = 3237.37 #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraX = m_cameraMatrix[0,0] #Need to load in actual Numbers from Camera Calibration
+m_focalLengthOfCameraY = m_cameraMatrix[1,1] #Need to load in actual Numbers from Camera Calibration
+m_horizonLine = 0.9 * m_yResolution # #Need to get actual number from camera
+
+#field parameters
 m_heightOfHighGoalTarget = 10 #Need to get actual number from manual
 m_heightOfLiftTarget = 15.75 #Actual Number From manual
-m_heightOfCamera = 18 #Need to get actual number from Robot
-m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
-m_heightOfLiftTargetFromCamera = m_heightOfCamera - m_heightOfLiftTarget
 m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflective to Top right Corner Of RetroReflective
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
+
+#extrensic parameters
+m_heightOfCamera = 7.25 #Need to get actual number from Robot
+m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
+m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
+
+#offset parameteres
 m_lateralRightOffsetOfLiftCamera = 5 #Need to get actual number from Robot
 m_forwardOffsetOfLiftCamera = 10 #Need to get actual number from Robot
 m_lateralRightOffsetOfHighGoalCamera = 5 #Need to get actual number from Robot
@@ -30,7 +41,8 @@ m_lateralRightOffsetOfShooter = 5 #Need to get actual number from Robot
 m_forwardOffsetOfShooter = 10 #Need to get actual number from Robot
 m_lateralRightOffsetOfGearPlacer = 5 #Need to get actual number from Robot
 m_forwardOffsetOfGearPlacer = 10 #Need to get actual number from Robot
-m_camera = picamera.PiCamera()
+
+#m_camera = picamera.PiCamera()
 
 def cameraStreamInit():
     m_camera.resolution = (m_xResolution, m_yResolution)
@@ -61,7 +73,8 @@ def getCameraStream(rawCapture):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         rawCapture.truncate(0)
-        return timestamp,image
+        undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs)
+        return timestamp,undistortedImage
     
 def null(x):
     pass
@@ -392,13 +405,15 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
 
 def getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget[0]
-    distanceFromCenterX = x - m_centerXOfImage + width/2
+    distanceFromCenterX = x - m_centerXOfImage
     radiansToTurn = math.atan(distanceFromCenterX/m_focalLengthOfCameraX)
     
     return radiansToTurn
 
 def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
-    radiansToTurnFromCamera = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
+    x,y,width,height = boundingBoxOfTarget
+    betterBoundingBoxOfTarget = [x + width/2, y, width/2,height]
+    radiansToTurnFromCamera = getRadiansToTurnFromOpticalAxis(betterBoundingBoxOfTarget)
     distanceAwayFromHighGoal = getDistanceAwayHighGoal(boundingBoxOfTarget)
     oppositeSide = math.sin(radiansToTurnFromCamera)*distanceAwayFromHighGoal
     adjacentSide = math.cos(radiansToTurnFromCamera)*distanceAwayFromHighGoal
@@ -408,7 +423,8 @@ def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
     angleToTurnFromCenterOfRobot = math.atan(centerOfRobotOppositeSide/centerOfRobotAdjacent)
     deltaAngleFromShooter = math.atan(m_lateralRightOffsetOfShooter/centerOfRobotHypotenuse)
     angleToTurnFromShooter = angleToTurnFromCenterOfRobot - deltaAngleFromShooter
-    shooterDistanceAway = math.sqrt(centerOfRobotHypotenuse*centerOfRobotHypotenuse + m_lateralRightOffsetOfShooter*m_lateralRightOffsetOfShooter)
+    parallelDistanceAway = math.sqrt(centerOfRobotHypotenuse*centerOfRobotHypotenuse - m_lateralRightOffsetOfShooter*m_lateralRightOffsetOfShooter)
+    shooterDistanceAway = parallelDistanceAway - m_forwardOffsetOfShooter
     return angleToTurnFromShooter, shooterDistanceAway
 
 def getDistanceAwayHighGoal(boundingBoxOfTarget):
@@ -420,8 +436,8 @@ def getDistanceAwayHighGoal(boundingBoxOfTarget):
 
 def getDistanceAwayLift(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget
-    distanceFromCenterY = y - m_centerYOfImage
-    elevationTangent = (distanceFromCenterY + 0.0)/(m_focalLengthOfCameraY + 0.0)
+    distanceFromHorizon = m_horizonLine - y
+    elevationTangent = (distanceFromHorizon + 0.0)/(m_focalLengthOfCameraY + 0.0)
     distanceAwayLift = m_heightOfLiftTargetFromCamera/elevationTangent #Finding Adjacent; open to change
     return distanceAwayLift
 
@@ -463,36 +479,20 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
     oppositeAngle = math.acos(ratio)
     angleOfFurtherTargetToTargetDistance = math.pi - (math.pi/2 + oppositeAngle)
     angleFromRobotToFurtherTarget = math.atan(centerOfRobotFurtherTargetOpposite/centerOfRobotFurtherTargetAdjacent)
+    angleFromRobotToCloserTarget = math.atan(centerOfRobotCloserTargetOpposite/centerOfRobotCloserTargetAdjacent)
     angleToTurn = angleOfFurtherTargetToTargetDistance - angleFromRobotToFurtherTarget
-    centerOfRobotDistanceToDriveForward = math.cos(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
+    centerOfRobotDistanceToMoveForward = math.cos(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
     angleToTurn = angleToTurn*directionToTurn
-    distanceToSlideLaterally = math.sin(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
-    distanceToSlideLaterally = distanceToSlideLaterally*directionToSlideLaterally
-    
-    return angleToTurn, centerOfRobotDistanceToDriveForward, distanceToSlideLaterally
-
-def getDistanceToDriveLaterallyAndForward(boundingBoxesOfTargets):
-    firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
-    secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
-    if firstDistanceAway > secondDistanceAway:
-        longerDistance = firstDistanceAway
-        shorterDistance = secondDistanceAway
-        closerBoundingBox = boundingBoxesOfTargets[1]
+    centerOfRobotDistanceToMoveLaterally = math.sin(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
+    centerOfRobotDistanceToMoveLaterally = centerOfRobotDistanceToSlideLaterally*directionToSlideLaterally
+    gearPlacerDistanceToMoveForward = centerOfRobotDistanceToMoveForward - m_forwardOffsetOfGearPlacer
+    gearPlacerDistanceToMoveLaterally = centerOfRobotDistanceToMoveLaterally + m_lateralRightOffsetOfGearPlacer
+    if (centerOfRobotDistanceToMoveLaterally > 0 ):
+        gearPlacerDistanceToMoveLaterally = gearPlacerDistanceToMoveLaterally - m_widthOfRetroReflectiveToLift
     else:
-        longerDistance = secondDistanceAway
-        shorterDistance = firstDistanceAway
-        closerBoundingBox = boundingBoxesOfTargets[0]
-
-    angleToCenterCloserTarget = getAngleToTurnFromOpticalAxis(closerBoundingBox)
-    distanceToMoveLaterallyToCloserTarget = math.sin(angleToCenterCloserTarget)*shorterDistance
-    distanceToDriveForwardFromCamera = math.cos(angleToCenterCloserTarget)*shorterDistance
-    angleOfCloserTarget = math.acos((math.pow(shorterDistance, 2) + math.pow(m_widthOfLift, 2) - math.pow(longerDistance, 2))/(2*shorterDistance*m_widthOfLift)) #Using law of coesins
-    if (angleOfCloserTarget > 90 and distanceToMoveLaterallyToCloserTarget < 0) or (angleOfCloserTarget < 90 and distanceToMoveLaterallyToCloserTarget > 0):
-        distanceToMoveLaterallyFromCamera = distanceToMoveLaterallyToCloserTarget - m_widthOfRetroReflectiveToLift
-    else:
-        distanceToMoveLaterallyFromCamera = distanceToMoveLaterallyToCloserTarget + m_widthOfRetroReflectiveToLift
-
-    return gearPlacerDistanceToMoveLaterallyToLift, gearPlacerDistance
+        gearPlacerDistanceToMoveLaterally = gearPlacerDistanceToMoveLaterally + m_widthOfRetroReflectiveToLift
+        
+    return angleToTurn, gearPlacerDistanceToMoveForward, gearPlacerDistanceToMoveLaterally
 
 def initNetworkTables():
     logging.basicConfig(level=logging.DEBUG)
@@ -501,13 +501,15 @@ def initNetworkTables():
     sd = NetworkTables.getTable("VisionProcessing")
     return sd
     
-def putDataOnNetworkTablesLift(networkTable,timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
+def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
+    networkTable.putBoolean('foundLiftTarget', booleanFoundTarget)
     networkTable.putNumber('radiansToTurnLift', radiansToTurnLift)
     networkTable.putNumber('distanceToMoveLaterallyLift', distanceToMoveLaterallyLift)
     networkTable.putNumber('distanceToDriveForwardLift', distanceToDriveForwardLift)
     networkTable.putNumber('timestampLift', timestampLift)
     
-def putDataOnNetworkTablesHighGoal(networkTable,timestampHighGoal,radiansToTurnHighGoal,distanceAwayHighGoal):
+def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHighGoal,radiansToTurnHighGoal,distanceAwayHighGoal):
+    networkTable.putBoolean('foundHighGoalTarget', booleanFoundTarget)
     networkTable.putNumber('radiansToTurnHighGoal', radiansToTurnHighGoal)
     networkTable.putNumber('distanceAwayHighGoal', distanceAwayHighGoal)
     networkTable.putNumber('timestampHighGoal', timestampHighGoal)
@@ -520,15 +522,51 @@ def main():
         retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
         retLift,liftTargets = findLiftTarget(cameraStream)
         if retLift == True:
-            radiansToTurnLift = getRadiansToTurnLift(liftTargets)
-            distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToDriveLaterallyAndForward(liftTargets)
-            putDataOnNetworkTablesLift(sd,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
+            radiansToTurnLift, distanceToMoveLaterallyLift, distanceToDriveForwardLift = getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(liftTargets)
+            putDataOnNetworkTablesLift(sd,True,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
         else:
-            putDataOnNetworkTablesLift(sd,timestamp,1000,1000,1000)
+            putDataOnNetworkTablesLift(sd,False,timestamp,1000,1000,1000)
         if retHighGoal == True:
             radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
-            putDataOnNetworkTablesHighGoal(sd,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
+            putDataOnNetworkTablesHighGoal(sd,True,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
         else:
-            putDataOnNetworkTablesHighGoal(sd,timestamp,1000,1000)
-        
-main()
+            putDataOnNetworkTablesHighGoal(sd,False,timestamp,1000,1000)
+
+print 'X focal length', m_focalLengthOfCameraX
+print 'Y focal length', m_focalLengthOfCameraY
+print
+print 'X resolution is ', m_xResolution, 'Y reolution is ', m_yResolution
+print
+
+boundingBox = [m_centerXOfImage, m_centerYOfImage/2 ,10,50]
+test = getDistanceAwayLift(boundingBox)
+
+print test
+
+boundingBox = [m_centerXOfImage, m_centerYOfImage ,10,50]
+test = getDistanceAwayLift(boundingBox)
+
+print test
+
+boundingBox = [m_centerXOfImage, 0 ,10,50]
+test = getDistanceAwayLift(boundingBox)
+
+print test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

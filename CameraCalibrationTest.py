@@ -34,13 +34,14 @@ for imgFileName in os.listdir(images):
         # Draw and display the corners
         img = cv2.drawChessboardCorners(img, (6,8), corners2,ret)
         cv2.imshow('window',img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
     
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
 
-np.savez(('Users/admin/OpenCV Experiments'), ret = ret, mtx = mtx, dist = dist, rvecs = rvecs, tvecs = tvecs)
-np.savez(('/image_object_points'),objpoints=objpoints, imgpoints=imgpoints)
+#np.savez(('C:\\Users\\admin\\OpenCV Experiments\\CameraCalibrationData'), mtx=mtx, dist=dist)
+
+#np.savez(('/image_object_points'),objpoints=objpoints, imgpoints=imgpoints)
 
 
