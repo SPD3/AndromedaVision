@@ -22,7 +22,7 @@ m_focalLengthOfCameraY = m_cameraMatrix[1,1] #Need to load in actual Numbers fro
 m_horizonLine = 0.9 * m_yResolution # #Need to get actual number from camera
 
 #field parameters
-m_heightOfHighGoalTarget = 10 #Need to get actual number from manual
+m_heightOfHighGoalTarget = 10.0 #Need to get actual number from manual
 m_heightOfLiftTarget = 15.75 #Actual Number From manual
 m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflective to Top right Corner Of RetroReflective
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
@@ -31,16 +31,18 @@ m_widthOfRetroReflectiveToLift = m_widthOfLift/2
 m_heightOfCamera = 7.25 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
+m_degreesAngleOfCamera = 0.0 #Need to get actual number from Robot
+m_radiansAngleofCamera = m_degreesAngleOfCamera * (math.pi/180)
 
 #offset parameteres
-m_lateralRightOffsetOfLiftCamera = 5 #Need to get actual number from Robot
-m_forwardOffsetOfLiftCamera = 10 #Need to get actual number from Robot
-m_lateralRightOffsetOfHighGoalCamera = 5 #Need to get actual number from Robot
-m_forwardOffsetOfHighGoalCamera = 10 #Need to get actual number from Robot
-m_lateralRightOffsetOfShooter = 5 #Need to get actual number from Robot
-m_forwardOffsetOfShooter = 10 #Need to get actual number from Robot
-m_lateralRightOffsetOfGearPlacer = 5 #Need to get actual number from Robot
-m_forwardOffsetOfGearPlacer = 10 #Need to get actual number from Robot
+m_lateralRightOffsetOfLiftCamera = 5.0 #Need to get actual number from Robot
+m_forwardOffsetOfLiftCamera = 10.0 #Need to get actual number from Robot
+m_lateralRightOffsetOfHighGoalCamera = 5.0 #Need to get actual number from Robot
+m_forwardOffsetOfHighGoalCamera = 10.0 #Need to get actual number from Robot
+m_lateralRightOffsetOfShooter = 5.0 #Need to get actual number from Robot
+m_forwardOffsetOfShooter = 10.0 #Need to get actual number from Robot
+m_lateralRightOffsetOfGearPlacer = 5.0 #Need to get actual number from Robot
+m_forwardOffsetOfGearPlacer = 10.0 #Need to get actual number from Robot
 
 #m_camera = picamera.PiCamera()
 
@@ -286,7 +288,7 @@ def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, black
         x,y,width,height = box
         tempImage = image[y:y+height, x:x+width]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
-        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels + 0.0) < blackToWhiteRatioMax:#number of black pixels for every white pixel
+        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
@@ -297,7 +299,7 @@ def filterTopHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin
         x,y,width,height = box
         tempImage = image[y:y+height/2, x:x+width]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
-        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels + 0.0) < blackToWhiteRatioMax:#number of black pixels for every white pixel
+        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
         
     return betterBoundingBoxes
@@ -310,7 +312,7 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMi
         tempImage = image[y:y+height, x:x+width/2]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
         numberOfWhitePixels = cv2.countNonZero(tempImage)
-        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels + 0.0) < blackToWhiteRatioMax:#number of black pixels for every white pixel
+        if blackToWhiteRatioMin < ((width*height - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
@@ -411,7 +413,7 @@ def getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget):
     return radiansToTurn
 
 def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
-    x,y,width,height = boundingBoxOfTarget
+    x,y,width,height = boundingBoxOfTarget[0]
     betterBoundingBoxOfTarget = [x + width/2, y, width/2,height]
     radiansToTurnFromCamera = getRadiansToTurnFromOpticalAxis(betterBoundingBoxOfTarget)
     distanceAwayFromHighGoal = getDistanceAwayHighGoal(boundingBoxOfTarget)
@@ -430,15 +432,21 @@ def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
 def getDistanceAwayHighGoal(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget[0]
     distanceFromCenterY = m_centerYofImage - y
-    elevationAngle = math.atan(distanceFromCenterY/m_focalLengthOfCameraY)
-    distanceAwayHighGoalFromCamera = m_heightOfHighGoalTargetFromCamera/math.tan(elevationAngle) #Finding Adjacent; open to change
+    elevationAngle = math.atan((distanceFromCenterY)/(m_focalLengthOfCameraY))
+    offsetAddedElevationAngle = elevationAngle + m_radiansAngleofCamera
+    distanceAwayHighGoalFromCamera = m_heightOfHighGoalTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
     return distanceAwayHighGoalFromCamera
 
 def getDistanceAwayLift(boundingBoxOfTarget):
     x,y,width,height = boundingBoxOfTarget
-    distanceFromHorizon = m_horizonLine - y
-    elevationTangent = (distanceFromHorizon + 0.0)/(m_focalLengthOfCameraY + 0.0)
-    distanceAwayLift = m_heightOfLiftTargetFromCamera/elevationTangent #Finding Adjacent; open to change
+    distanceFromCenterY = m_centerYOfImage - y 
+    elevationAngle = math.atan((distanceFromCenterY)/(m_focalLengthOfCameraY))
+    offsetAddedElevationAngle = elevationAngle + m_radiansAngleofCamera
+    print offsetAddedElevationAngle*180/math.pi
+    print math.tan(offsetAddedElevationAngle)
+    print
+    distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
+    print locals()
     return distanceAwayLift
 
 def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
@@ -535,7 +543,7 @@ def main():
 print 'X focal length', m_focalLengthOfCameraX
 print 'Y focal length', m_focalLengthOfCameraY
 print
-print 'X resolution is ', m_xResolution, 'Y reolution is ', m_yResolution
+print 'X resolution is ', m_xResolution, 'Y resolution is ', m_yResolution
 print
 
 boundingBox = [m_centerXOfImage, m_centerYOfImage/2 ,10,50]
@@ -552,18 +560,6 @@ boundingBox = [m_centerXOfImage, 0 ,10,50]
 test = getDistanceAwayLift(boundingBox)
 
 print test
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

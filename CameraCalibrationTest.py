@@ -13,7 +13,7 @@ objp[:,:2] = np.mgrid[0:8,0:6].T.reshape(-1,2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-images = "C:\\Users\\admin\\Pictures\\ChessBoardImages"
+images = "C:\\Users\\admin\\Pictures\\CameraCalibration"
 for imgFileName in os.listdir(images):    
     
     fullFileName = os.path.join(images, imgFileName)
@@ -34,13 +34,13 @@ for imgFileName in os.listdir(images):
         # Draw and display the corners
         img = cv2.drawChessboardCorners(img, (6,8), corners2,ret)
         cv2.imshow('window',img)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
     
     cv2.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
 
-#np.savez(('C:\\Users\\admin\\OpenCV Experiments\\CameraCalibrationData'), mtx=mtx, dist=dist)
+np.savez(('C:\\Users\\admin\\OpenCV Experiments\\CameraCalibrationData'), mtx=mtx, dist=dist)
 
 #np.savez(('/image_object_points'),objpoints=objpoints, imgpoints=imgpoints)
 
