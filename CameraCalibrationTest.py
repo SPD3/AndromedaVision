@@ -13,9 +13,9 @@ objp[:,:2] = np.mgrid[0:8,0:6].T.reshape(-1,2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-images = "C:\\Users\\admin\\Pictures\\CameraCalibration"
+images = "/home/pi/Pictures"
 for imgFileName in os.listdir(images):    
-    
+    print "Running"
     fullFileName = os.path.join(images, imgFileName)
     img = cv2.imread(fullFileName)
 
@@ -39,8 +39,9 @@ for imgFileName in os.listdir(images):
     cv2.destroyAllWindows()
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
-
-np.savez(('C:\\Users\\admin\\OpenCV Experiments\\CameraCalibrationData'), mtx=mtx, dist=dist)
+print 'mtx is: ', mtx
+print 'dist is ', dist
+np.savez(('/home/pi/test/AndromedaVision'), mtx=mtx, dist=dist)
 
 #np.savez(('/image_object_points'),objpoints=objpoints, imgpoints=imgpoints)
 
