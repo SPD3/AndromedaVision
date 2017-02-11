@@ -16,12 +16,19 @@ import logging
 #interensic paramaters
 m_xResolution = 2656 
 m_yResolution = 1328
-#m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.matrix([[  1.69714761e+04,   0.00000000e+00,   1.20224572e+03],
- [  0.00000000e+00,   1.75260785e+04,   6.19148918e+02],
+m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
+m_cameraMatrix = np.matrix([[  2.04031106e+03,   0.00000000e+00,   1.36688532e+03],
+ [  0.00000000e+00,   2.04279929e+03,   6.65064554e+02],
  [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
-m_distCoeffs = np.matrix([[  3.12035247e+01,  -1.43758274e+03,   1.93277402e-01,  -3.79253300e-01,
-   -6.08747037e+04]])
+m_distCoeffs = np.matrix([[ 0.18141488, -0.47026778, -0.00274879, -0.00065564,  0.33265707]])
+
+
+
+
+#m_cameraMatrix = np.matrix([[  4.81899392e+03,   0.00000000e+00,   6.93806251e+02],
+ #[  0.00000000e+00,   4.93175109e+03 ,  6.23951896e+02],
+ #[  0.00000000e+00  , 0.00000000e+00  , 1.00000000e+00]])
+#m_distCoeffs = np.matrix([[  1.49221759e-02 ,  4.16414703e+00,  -2.27562975e-02 , -5.36383565e-02,-1.60380458e+01]])
 m_centerXOfImage = m_cameraMatrix[0,2]#m_xResolution/2# #Need to load in actual Numbers from Camera Calibration
 m_centerYOfImage = m_cameraMatrix[1,2]# m_yResolution/2# #Need to load in actual Numbers from Camera Calibration
 m_focalLengthOfCameraX = m_cameraMatrix[0,0] #Need to load in actual Numbers from Camera Calibration
@@ -35,11 +42,12 @@ m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflect
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
 
 #extrensic parameters
-m_heightOfCamera = 5.375 #Need to get actual number from Robot
+m_heightOfCamera = 8.125 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
-m_degreesAngleOfCamera = 0.0 #Need to get actual number from Robot
-m_radiansAngleofCamera = m_degreesAngleOfCamera * (math.pi/180)
+m_degreesAngleOfCamera = 16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
+#print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
+m_radiansAngleofCamera = (m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
 
 #offset parameteres
 m_lateralRightOffsetOfLiftCamera = 0.0 #Need to get actual number from Robot
@@ -60,7 +68,7 @@ m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
     m_camera.framerate = 32
-    m_camera.shutter_speed = 10000000#800
+    m_camera.shutter_speed = 800
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
     m_camera.flash_mode = 'off'
@@ -111,7 +119,7 @@ def setupImageWindow():
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,55,210,10,60,255,65)#(img,55,250,10,60,255,65)
-    cv2.imshow('Processed Image', correctColorImage)
+    #cv2.imshow('Processed Image', correctColorImage)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     preparedImage = prepareImage(correctColorImage)    
@@ -133,25 +141,28 @@ def findLiftTarget(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
-    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.8)
+    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
     
     print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     
     
-    correctDistanceBetweenTargetsList = filterByOtherTargetLift(correctBlack2WhiteRatioList, 4.4, 25, 30)
-    print 'correctDistanceBetweenTargetsList: ',len(correctDistanceBetweenTargetsList)
+    #correctDistanceBetweenTargetsList = filterByOtherTargetLift(correctBlack2WhiteRatioList, 4.4, 25, 30)
+    #print 'correctDistanceBetweenTargetsList: ',len(correctDistanceBetweenTargetsList)
     
         
-    if len(correctLengthToWidthRatioList) == 1:
-        conjoinedBloblist = conjoinAnyBlobs(correctSizeList,100,0,100)
-        
-        for conjoinedBlob in conjoinedBloblist:
-            betterFilteredList = correctLengthToWidthRatioList + [conjoinedBlob]
+    if len(correctLengthToWidthRatioList) != 2 and len(correctLengthToWidthRatioList) != 0:
+        conjoinedBloblist = conjoinAnyBlobs(correctSizeList,0.5)
+        if conjoinedBloblist != 0:
+            for conjoinedBlob in conjoinedBloblist:
+                betterFilteredList = correctLengthToWidthRatioList + [conjoinedBlob]
+        else:
+            betterFilteredList = correctLengthToWidthRatioList
         betterFilteredList = filterByOtherTargetLift(betterFilteredList,4.4,25,30)
-        
+        print '1'
+        print 'final result: ', len(betterFilteredList)
         return len(betterFilteredList) == 2, betterFilteredList
         
-    if len(correctLengthToWidthRatioList) == 2 or len(correctDistanceBetweenTargetsList) == 2:
+    if len(correctLengthToWidthRatioList) == 2 :
         firstBoundingBox = correctLengthToWidthRatioList[0]
         secondBoundingBox = correctLengthToWidthRatioList[1]
         #drawBoundingBox(img, firstBoundingBox)
@@ -175,17 +186,23 @@ def findLiftTarget(img):
                 
             else:
                 filteredList = correctLengthToWidthRatioList
-                
+        print 'filteredList 1: ', filteredList
+        filteredList = filterByOtherTargetLift(filteredList, 4.4, 150, 40)
+        print 'filteredList 2: ', filteredList
         #print
         #print 'filteredList: ', filteredList
-        for box in filteredList:
-            print box
+        #for box in filteredList:
+         #   print box
             
-            drawBoundingBoxes(img, filteredList)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-        return True, filteredList
-    
+          #  drawBoundingBoxes(img, filteredList)
+           # cv2.waitKey(0)
+            #cv2.destroyAllWindows()
+        
+        if len(filteredList) == 2:
+            print 'YES final result: ', len(filteredList)
+            return True, filteredList
+        
+    print 'final result: 0'
     return False, correctBlack2WhiteRatioList
     
     
@@ -260,9 +277,9 @@ def prepareImage(image):
     #erodedImage = cv2.erode(erodedImage,(3,3))
     #erodedImage = cv2.erode(erodedImage,(3,3))
     
-    gaussianBlurImage = cv2.GaussianBlur(image,(3,3),1.6)
+    #gaussianBlurImage = cv2.GaussianBlur(image,(3,3),1.6)
 
-    return gaussianBlurImage
+    return image
 
 
 def filterColors(image,minH,minS,minV,maxH,maxS,maxV):
@@ -413,12 +430,12 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffset, heightOffset):
             #retro Reflective to the width between the retro targets top left to top left
             #print 'xDifference is:', xDifference  
             if 0 < secondX - x < xDifference:
-                #print "passed X test"
+                print "passed X test"
                 
                 if secondY - yOffset < y < secondY + yOffset :
-                    #print "passed Y test"
+                    print "passed Y test"
                     if secondHeight-heightOffset < width < secondHeight + heightOffset or height-heightOffset < secondHeight < height + heightOffset:
-                        #print "passed Height test"
+                        print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
                         
@@ -506,13 +523,18 @@ def getDistanceAwayHighGoal(boundingBoxOfTarget):
 def getDistanceAwayLift(boundingBoxOfTarget):
     print "Bounding Box: ", boundingBoxOfTarget
     x,y,width,height = boundingBoxOfTarget
-    distanceFromCenterY = m_centerYOfImage - y 
+    distanceFromCenterY = m_centerYOfImage - y
+    print "m_centerYOfImage: ", m_centerYOfImage
+    print 'distanceFromCenterY', distanceFromCenterY
+    print 'm_focalLengthOfCameraY', m_focalLengthOfCameraY
     elevationAngle = math.atan((distanceFromCenterY)/(m_focalLengthOfCameraY))
     offsetAddedElevationAngle = elevationAngle + m_radiansAngleofCamera
+    print 'offsetAddedElevationAngle', offsetAddedElevationAngle*(180/math.pi)
     #print offsetAddedElevationAngle*180/math.pi
     #print math.tan(offsetAddedElevationAngle)
     #print
     distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
+    #return distanceAwayLift
     return distanceAwayLift
 
 def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
@@ -558,8 +580,8 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
         (2*m_widthOfLift*centerOfRobotFurtherDistanceHypotenuse))
     #print 'centerOfRobotCloserDistanceHypotenuse ', centerOfRobotCloserDistanceHypotenuse
     #print 'centerOfRobotFurtherDistanceHypotenuse ', centerOfRobotFurtherDistanceHypotenuse
-    #print 'ratio1', ratio1
-    #print 'ratio', ratio
+    print 'ratio1', ratio1
+    print 'ratio', ratio
     oppositeAngle = math.acos(ratio1)
 
     
@@ -591,7 +613,7 @@ def initNetworkTables():
 def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
     networkTable.putBoolean('foundLiftTarget', booleanFoundTarget)
     networkTable.putNumber('radiansToTurnLift', radiansToTurnLift)
-    networkTable.putNumber('distanceToMoveLaterallyLift', distanceToMoveLaterallyLift)
+    networkTable.putNumber('distanceToDriveLaterallyLift', distanceToMoveLaterallyLift)
     networkTable.putNumber('distanceToDriveForwardLift', distanceToDriveForwardLift)
     networkTable.putNumber('timestampLift', timestampLift)
     
@@ -600,7 +622,23 @@ def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHi
     networkTable.putNumber('radiansToTurnHighGoal', radiansToTurnHighGoal)
     networkTable.putNumber('distanceAwayHighGoal', distanceAwayHighGoal)
     networkTable.putNumber('timestampHighGoal', timestampHighGoal)
-    
+
+def getDataFromNetworktables(networkTable):
+    turnOffRet = networkTable.getBoolean('TurnOff', 0.0)
+    timestampRet = networkTable.getBoolean('TimestampRet', 0.0)
+    timestamp = networkTable.getBoolean('Timestamp', 0.0)
+    if turnOffRet:
+        return turnOffRet, None, None
+    elif timestampRet:
+        return False,timestampRet,timestamp
+    else:
+        return False, False, 0
+
+#def saveTimeStamp(extractingTimeStamp, timestamp):
+ #   if extractingTimeStamp:
+     #   cv2.imwrite("Image%" % timestamp, timestamp)
+  #  else:
+   #     #Save all the images since 10 seconds ago
 def main():
     initializedCameraStream = cameraStreamInit()
     sd = initNetworkTables()
@@ -627,8 +665,38 @@ def main():
           #  putDataOnNetworkTablesHighGoal(sd,True,timestamp,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
         #else:
          #   putDataOnNetworkTablesHighGoal(sd,False,timestamp,1000,1000)
-        
+
+        #turnOffRet, timestampRet, timestamp = getDataFromNetworktables(sd)
+        #if turnOffRet:
+         #   break
+        #elif timestampRet:
+         #   saveTimeStamp(timestamp)
 main()
+#def getAngleOfCamera(distanceAway):
+ #   initializedCameraStream = cameraStreamInit()
+  #  timestamp,cameraStream = getCameraStream(initializedCameraStream)
+   # retLift,liftTargets = findLiftTarget(cameraStream)
+    #actualAngle = math.atan(m_heightOfLiftTargetFromCamera/distanceAway)
+#    offsetAddedElevationAngle1 = getDistanceAwayLift(liftTargets[0])
+ #   offsetAddedElevationAngle2 = getDistanceAwayLift(liftTargets[0])
+  #  error = ((offsetAddedElevationAngle1 - actualAngle) + (offsetAddedElevationAngle2 - actualAngle))/2
+   # return error
+
+#error1 = getAngleOfCamera(15)
+#cv2.namedWindow("ready")
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
+#error2 = getAngleOfCamera(20)
+#cv2.namedWindow("ready")
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
+#error3 = getAngleOfCamera(30)
+#cv2.namedWindow("ready")
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
+#error4 = getAngleOfCamera(40)
+#averageError = (error1 + error2 + error3 + error4)/4
+#print 'averageError: ', averageError
 #rawCapture = cameraStreamInit()
 #sd = initNetworkTables()
 #timestamp, img = getCameraStream(rawCapture)
@@ -645,4 +713,4 @@ main()
 #else:
  #   putDataOnNetworkTablesLift(sd,False,timestamp,None,None,None)
         
-
+#TURN OFF THE PI !!!!!!!!!!!!!!!!!!!!!!
