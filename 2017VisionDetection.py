@@ -21,7 +21,10 @@ m_cameraMatrix = np.matrix([[  2.04031106e+03,   0.00000000e+00,   1.36688532e+0
  [  0.00000000e+00,   2.04279929e+03,   6.65064554e+02],
  [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
 m_distCoeffs = np.matrix([[ 0.18141488, -0.47026778, -0.00274879, -0.00065564,  0.33265707]])
-
+print m_cameraMatrix
+print np.load('/home/pi/Desktop/mtx.npy')
+print m_distCoeffs
+print np.load('/home/pi/Desktop/dist.npy')
 
 
 
@@ -67,8 +70,8 @@ m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
 def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
-    m_camera.framerate = 32
-    m_camera.shutter_speed = 800
+    m_camera.framerate = 10
+    m_camera.shutter_speed = 900
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
     m_camera.flash_mode = 'off'
@@ -86,21 +89,15 @@ def getCameraStream(rawCapture):
     for frame in m_camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
         timestamp = m_camera.timestamp
         image = frame.array
-        #aGain = m_camera.analog_gain
-        #dGain = m_camera.digital_gain
-        #shutterSpeed = m_camera.exposure_speed
-        #print
-        #print aGain
-        #print dGain
-        #print shutterSpeed
-        #print
         rawCapture.truncate(0)
         h,w = image.shape[:2]
         newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(m_cameraMatrix,m_distCoeffs,(w,h),1,(w,h))
+        print 'undistorting'
         undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
-        cv2.imshow('h', undistortedImage)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        print 'undistorted'    
+        #cv2.imshow('h', undistortedImage)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
         return timestamp,undistortedImage
     
 def null(x):
@@ -120,8 +117,8 @@ def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,55,210,10,60,255,65)#(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
@@ -133,13 +130,13 @@ def findLiftTarget(img):
     
     print 'correctSizeList: ',len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,0,3)
     print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
     
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
     
@@ -152,14 +149,30 @@ def findLiftTarget(img):
         
     if len(correctLengthToWidthRatioList) != 2 and len(correctLengthToWidthRatioList) != 0:
         conjoinedBloblist = conjoinAnyBlobs(correctSizeList,0.5)
-        if conjoinedBloblist != 0:
-            for conjoinedBlob in conjoinedBloblist:
+        betterConjoinedBloblist = []
+        print 'conjoinedBloblist', conjoinedBloblist
+        for conjoinedBlob in conjoinedBloblist:
+            print 'len(conjoinedBlob): ',len(conjoinedBlob)
+            if len(conjoinedBlob) == 4:
+                betterConjoinedBloblist = betterConjoinedBloblist + [conjoinedBlob]
+        if len(betterConjoinedBloblist) != 0:
+            if betterConjoinedBloblist == 0:
+                betterFilteredList = correctLengthToWidthRatioList
+                print 'betterConjoinedBloblist == 0'
+            for conjoinedBlob in betterConjoinedBloblist:
                 betterFilteredList = correctLengthToWidthRatioList + [conjoinedBlob]
+                print "adding: ", conjoinedBlob
         else:
             betterFilteredList = correctLengthToWidthRatioList
-        betterFilteredList = filterByOtherTargetLift(betterFilteredList,4.4,25,30)
+            print "here"
+        print 'len(betterFilteredList): ', len(betterFilteredList)
+        print '[betterFilteredList]: ', [betterFilteredList]
+        betterFilteredList = filterByOtherTargetLift(betterFilteredList,5,100,65)
         print '1'
         print 'final result: ', len(betterFilteredList)
+        drawBoundingBoxes(img, betterFilteredList)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
         return len(betterFilteredList) == 2, betterFilteredList
         
     if len(correctLengthToWidthRatioList) == 2 :
@@ -169,7 +182,7 @@ def findLiftTarget(img):
         firstX, firstY, firstWidth, firstHeight = firstBoundingBox
         secondX, secondY, secondWidth, secondHeight = secondBoundingBox
         if firstHeight > secondHeight:
-            ret, conjoinedBlob = checkForConjoiningBlobs(secondBoundingBox,correctSizeList, 0.5)
+            ret, conjoinedBlob = checkForConjoiningBlobs(secondBoundingBox,correctNumberOfContoursList, 0.5)
             #print 'conjoinedBlob: ', conjoinedBlob
             if ret:
                 filteredList = [conjoinedBlob, firstBoundingBox]
@@ -187,7 +200,10 @@ def findLiftTarget(img):
             else:
                 filteredList = correctLengthToWidthRatioList
         print 'filteredList 1: ', filteredList
-        filteredList = filterByOtherTargetLift(filteredList, 4.4, 150, 40)
+        drawBoundingBoxes(img, filteredList)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        filteredList = filterByOtherTargetLift(filteredList, 5, 100, 65)
         print 'filteredList 2: ', filteredList
         #print
         #print 'filteredList: ', filteredList
@@ -419,22 +435,34 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffset, heightOffset):
         return goodBoundingBoxes
     for box in goodBoundingBoxes:
         #print 'box: ',box
+        if len(box) == 0:
+            print 'uh oh 1'
+            continue
         x,y,width,height = box
+        
         for secondBox in goodBoundingBoxes:
             
             if box == secondBox:
+                
                 continue
-            #print 'secondBox: ',secondBox
+            if len(secondBox) == 0:
+                print 'uh oh 3'
+                continue
+            
+            print 'secondBox: ',secondBox
+            print 'len(secondBox): ', len(secondBox)
+            print 'len(goodBoundingBoxes): ',len(goodBoundingBoxes)
             secondX,secondY,secondWidth,secondHeight = secondBox
             xDifference = width*ratio #Constant of proportionality of width of the 
             #retro Reflective to the width between the retro targets top left to top left
-            #print 'xDifference is:', xDifference  
+            print 'xDifference is:', xDifference
+            print 'comparing: ', box, 'and', secondBox
             if 0 < secondX - x < xDifference:
                 print "passed X test"
                 
                 if secondY - yOffset < y < secondY + yOffset :
                     print "passed Y test"
-                    if secondHeight-heightOffset < width < secondHeight + heightOffset or height-heightOffset < secondHeight < height + heightOffset:
+                    if secondHeight-heightOffset < height < secondHeight + heightOffset or height-heightOffset < secondHeight < height + heightOffset:
                         print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
@@ -483,7 +511,7 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
         copy = cv2.rectangle(copy,(x,y),((x + width), (y + height)),(255,0,0), 3)
     small = cv2.resize(copy, (0,0), fx = 0.2, fy = 0.2)
     
-    cv2.imshow("Processed Image", small)
+    #cv2.imshow("Processed Image", small)
     
 
 #These are the Math functions
@@ -644,6 +672,7 @@ def main():
     sd = initNetworkTables()
     while True:
         timestamp,cameraStream = getCameraStream(initializedCameraStream)
+        print 'got'
         #retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
         retLift,liftTargets = findLiftTarget(cameraStream)
         if retLift == True:
@@ -657,9 +686,9 @@ def main():
         else:
             putDataOnNetworkTablesLift(sd,False,timestamp,1000,1000,1000)
         print "ready"
-        cv2.namedWindow("ready")
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.namedWindow("ready")
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
         #if retHighGoal == True:
          #   radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
           #  putDataOnNetworkTablesHighGoal(sd,True,timestamp,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
@@ -685,7 +714,7 @@ main()
 #error1 = getAngleOfCamera(15)
 #cv2.namedWindow("ready")
 #cv2.waitKey(0)
-#cv2.destroyAllWindows()
+##cv2.destroyAllWindows()
 #error2 = getAngleOfCamera(20)
 #cv2.namedWindow("ready")
 #cv2.waitKey(0)

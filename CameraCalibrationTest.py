@@ -54,8 +54,8 @@ for i in xrange(len(objpoints)):
     error = cv2.norm(imgpoints[i], imagePoints2, cv2.NORM_L2)/len(imagePoints2)
     meanError += error
 print "Total Error: ", meanError/len(objpoints)
-#np.savez(('/home/pi/test/AndromedaVision'), mtx=mtx, dist=dist)
 
-#np.savez(('/image_object_points'),objpoints=objpoints, imgpoints=imgpoints)
+np.save(('/home/pi/Desktop/mtx.npy'), mtx)
+np.save(('/home/pi/Desktop/dist.npy'), dist)
 
 
