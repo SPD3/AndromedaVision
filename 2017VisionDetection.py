@@ -564,7 +564,83 @@ def getDistanceAwayLift(boundingBoxOfTarget):
     distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
     #return distanceAwayLift
     return distanceAwayLift
-
+def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(boundingBoxesOfTargets):
+    for target in boundingBoxesOfTargets:
+        offset = 10
+        x,y,width,height = target
+        tempImageCorner1 = picture[y - offset:y+offset, x-offset:x+offset]
+        tempImageCorner2 = picture[y + height - offset:y+height+ offset, x+ width-offset:x+width+offset]
+        tempImageCorner3 = picture[y + height - offset:y+height+ offset, x-10:x+offset]
+        tempImageCorner4 = picture[y - offset:y+ offset, x + width - offset:x+width+ offset]
+            
+        #tempCornerImage1
+        #correctColorImage = filterColors(tempImage,50,60,100,100,190,255)#(img,55,250,10,60,255,65)
+    
+        #print tempImage
+        grayTempCorner1 = cv2.cvtColor(tempImageCorner1, cv2.COLOR_BGR2GRAY)
+        grayTempCorner2 = cv2.cvtColor(tempImageCorner2, cv2.COLOR_BGR2GRAY)
+        grayTempCorner3 = cv2.cvtColor(tempImageCorner3, cv2.COLOR_BGR2GRAY)
+        grayTempCorner4 = cv2.cvtColor(tempImageCorner4, cv2.COLOR_BGR2GRAY)
+            
+        #cv2.imshow('binary',correctColorImage)
+        #cv2.waitKey()
+        grayTempCorner1 = np.float32(grayTempCorner1)
+        grayTempCorner2 = np.float32(grayTempCorner2)
+        grayTempCorner3 = np.float32(grayTempCorner3)
+        grayTempCorner4 = np.float32(grayTempCorner4)
+            
+        dst1 = cv2.cornerHarris(grayTempCorner1, 2, 5, 0.9)
+        print 'dst1', dst1
+        dst2 = cv2.cornerHarris(grayTempCorner2, 2, 5, 0.9)
+        dst3 = cv2.cornerHarris(grayTempCorner3, 2, 5, 0.9)
+        dst4 = cv2.cornerHarris(grayTempCorner4, 2, 5, 0.9)
+            
+        ret, dst1 = cv2.threshold(dst1, 0.01*dst1.max(),255,0)
+        ret, dst2 = cv2.threshold(dst2, 0.01*dst2.max(),255,0)
+        ret, dst3 = cv2.threshold(dst3, 0.01*dst3.max(),255,0)
+        ret, dst4 = cv2.threshold(dst4, 0.01*dst4.max(),255,0)
+            
+        dst1 = np.uint8(dst1)
+        dst2 = np.uint8(dst2)
+        dst3 = np.uint8(dst3)
+        dst4 = np.uint8(dst4)
+            
+        ret1, labels1, stats1, centroids1 = cv2.connectedComponentsWithStats(dst1)
+        ret2, labels2, stats2, centroids2 = cv2.connectedComponentsWithStats(dst2)
+        ret3, labels3, stats3, centroids3 = cv2.connectedComponentsWithStats(dst3)
+        ret4, labels4, stats4, centroids4 = cv2.connectedComponentsWithStats(dst4)
+            
+        #print 'centroids', centroids
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
+            
+        corners1 = cv2.cornerSubPix(grayTempCorner1,np.float32(centroids1) , (5,5), (-1,-1), criteria)
+        corners2 = cv2.cornerSubPix(grayTempCorner2,np.float32(centroids2) , (5,5), (-1,-1), criteria)
+        corners3 = cv2.cornerSubPix(grayTempCorner3,np.float32(centroids3) , (5,5), (-1,-1), criteria)
+        corners4 = cv2.cornerSubPix(grayTempCorner4,np.float32(centroids4) , (5,5), (-1,-1), criteria)
+            
+        print 'len corners', len(corners1) + len(corners2) + len(corners3) + len(corners4)
+        #np.append(imgpoints,corners)
+        #imgpoints.append(corners)
+        if imgpoints == []:
+            imgpoints = corners1
+            imgpoints = np.append(imgpoints,corners2,0)
+            imgpoints = np.append(imgpoints,corners3,0)
+            imgpoints = np.append(imgpoints,corners4,0)
+        else:
+            imgpoints = np.append(imgpoints, corners1,0)
+            imgpoints = np.append(imgpoints, corners2,0)
+            imgpoints = np.append(imgpoints, corners3,0)
+            imgpoints = np.append(imgpoints, corners4,0)
+                
+        betterCorners = []
+        
+        print 'width', width
+        print 'height', height
+            
+    print 'objPoints', objPoints
+    print 'imgpoints', imgpoints
+    ret, rvec, tvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
+    return rvec, tvec
 def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
     secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
@@ -633,7 +709,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
 
 def initNetworkTables():
     logging.basicConfig(level=logging.DEBUG)
-    ip = "10.49.8.77"
+    ip = "192.168.7.71"
     NetworkTables.initialize(server=ip)
     sd = NetworkTables.getTable("VisionProcessing")
     return sd
@@ -676,7 +752,7 @@ def main():
         #retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
         retLift,liftTargets = findLiftTarget(cameraStream)
         if retLift == True:
-            radiansToTurnLift, distanceToDriveForwardLift, distanceToMoveLaterallyLift = getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(liftTargets)
+            rvecs, tvecs= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(liftTargets)
             putDataOnNetworkTablesLift(sd,True,radiansToTurnLift,timestamp,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
             degreesToTurn = radiansToTurnLift*(180/math.pi)
             print "degreesToTurnLift: ", degreesToTurn
