@@ -51,6 +51,8 @@ m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
 m_degreesAngleOfCamera = 16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
 #print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
 m_radiansAngleofCamera = (m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
+m_RCamera = []#NEED TO LOAD THESE NUMBERS
+m_TCamera = []#NEED TO LOAD THESE NUMBERS
 
 #offset parameteres
 m_lateralRightOffsetOfLiftCamera = 0.0 #Need to get actual number from Robot
@@ -639,8 +641,30 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(boundingBoxesOfTa
             
     print 'objPoints', objPoints
     print 'imgpoints', imgpoints
-    ret, rvec, tvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
-    return rvec, tvec
+    ret, targetRvec, targetTvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
+    targetR = cv2.Rodrigues(targetRvec)
+    robotTvec = m_RCamera*targetR + m_TCamera
+    robotR = targetR*m_RCamera
+    robotTvecAfterTurning = robotR*robotTvec
+    return robotR, robotTvecAfterTurning
+
+#Found at learnopencv.com
+def rotationMatrixToEulerAngles(R):
+    assert(isRotationMatrix(R))
+
+    sy = math.sqrt(R[0,0]*R[0,0] + R[1,0]*R[1,0])
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2,1], R[2,2])
+        y = math.atan2(-R[2,0],sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else:
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0],sy)
+        z = 0
+    return np.array([x,y,z])
+
 def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
     secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
@@ -752,8 +776,12 @@ def main():
         #retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
         retLift,liftTargets = findLiftTarget(cameraStream)
         if retLift == True:
-            rvecs, tvecs= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(liftTargets)
-            putDataOnNetworkTablesLift(sd,True,radiansToTurnLift,timestamp,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
+            robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(liftTargets)
+            eulerAngles = rotationMatrixToEulerAngles(robotR)
+            radiansToTurnLift = eulerAngles[2]
+            distanceToMoveLaterallyLift = robotTvecAfterTurning[0]
+            distanceToDriveForwardLift = robotTvecAfterTurning[1]
+            putDataOnNetworkTablesLift(sd,True,timestamp,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
             degreesToTurn = radiansToTurnLift*(180/math.pi)
             print "degreesToTurnLift: ", degreesToTurn
             print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"

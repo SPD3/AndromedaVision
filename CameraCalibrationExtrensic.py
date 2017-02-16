@@ -506,10 +506,38 @@ def calibrateCameraExtrensic():
     
     #print 'newCameraMatrix ', newCameraMatrix
     #print 'm_cameraMatrix: ', m_cameraMatrix
-    return rvec, tvec
-rvec,tvec = calibrateCameraExtrensic()
-print 'rvec', rvec,np.linalg.norm(rvec),math.pi/2
-print 'tvec', tvec
+    rvec2, jacobian = cv2.Rodrigues(rvec)
+    return rvec2, tvec, rvec
+def isRotationMatrix(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype = R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+
+def rotationMatrixToEulerAngles(R):
+    assert(isRotationMatrix(R))
+
+    sy = math.sqrt(R[0,0]*R[0,0] + R[1,0]*R[1,0])
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2,1], R[2,2])
+        y = math.atan2(-R[2,0],sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else:
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0],sy)
+        z = 0
+    return np.array([x,y,z])
+rvec2,tvec, rvec = calibrateCameraExtrensic()
+ret = isRotationMatrix(rvec2)
+if ret:
+    print 'rvec', rvec
+    print 'tvec', tvec
+    eulerAngles = rotationMatrixToEulerAngles(rvec2)
+    print 'eulerAngles', eulerAngles #,np.linalg.norm(rvec),math.pi/2
+    
 
 
 
