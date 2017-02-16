@@ -22,9 +22,9 @@ m_cameraMatrix = np.matrix([[  2.04031106e+03,   0.00000000e+00,   1.36688532e+0
  [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
 m_distCoeffs = np.matrix([[ 0.18141488, -0.47026778, -0.00274879, -0.00065564,  0.33265707]])
 print m_cameraMatrix
-print np.load('/home/pi/Desktop/mtx.npy')
+#print np.load('/home/pi/Desktop/mtx.npy')
 print m_distCoeffs
-print np.load('/home/pi/Desktop/dist.npy')
+#print np.load('/home/pi/Desktop/dist.npy')
 
 
 
@@ -96,8 +96,9 @@ def getCameraStream(rawCapture):
         newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(m_cameraMatrix,m_distCoeffs,(w,h),1,(w,h))
         print 'undistorting'
         undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
-        print 'undistorted'    
-        #cv2.imshow('h', undistortedImage)
+        print 'undistorted'
+        #small = cv2.resize(undistortedImage, (0,0), fx = 0.2, fy = 0.2)
+        #cv2.imshow('h', small)
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         return timestamp,undistortedImage
@@ -169,7 +170,7 @@ def findLiftTarget(img):
             print "here"
         print 'len(betterFilteredList): ', len(betterFilteredList)
         print '[betterFilteredList]: ', [betterFilteredList]
-        betterFilteredList = filterByOtherTargetLift(betterFilteredList,5,100,65)
+        betterFilteredList = filterByOtherTargetLift(betterFilteredList,5,0.2,0.5)
         print '1'
         print 'final result: ', len(betterFilteredList)
         drawBoundingBoxes(img, betterFilteredList)
@@ -205,7 +206,7 @@ def findLiftTarget(img):
         drawBoundingBoxes(img, filteredList)
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
-        filteredList = filterByOtherTargetLift(filteredList, 5, 100, 65)
+        filteredList = filterByOtherTargetLift(filteredList, 5, 0.2, 0.5)
         print 'filteredList 2: ', filteredList
         #print
         #print 'filteredList: ', filteredList
@@ -431,7 +432,7 @@ def filterByDistanceBetweenTargetsHighGoal(goodBoundingBoxes):
                         
     return betterBoundingBoxes
 
-def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffset, heightOffset):
+def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffsetRatio, heightOffsetRatio):
     betterBoundingBoxes = []
     if len(goodBoundingBoxes) < 2:
         return goodBoundingBoxes
@@ -462,9 +463,10 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffset, heightOffset):
             if 0 < secondX - x < xDifference:
                 print "passed X test"
                 
-                if secondY - yOffset < y < secondY + yOffset :
+                if secondY - yOffsetRatio*secondHeight < y < secondY + yOffsetRatio*secondHeight :
                     print "passed Y test"
-                    if secondHeight-heightOffset < height < secondHeight + heightOffset or height-heightOffset < secondHeight < height + heightOffset:
+                    if (secondHeight-heightOffsetRatio*secondHeight < height < secondHeight + heightOffsetRatio*secondHeight or
+                        height-heightOffset*height < secondHeight < height + heightOffset*height):
                         print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
@@ -788,7 +790,7 @@ def main():
             print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
             
         else:
-            putDataOnNetworkTablesLift(sd,False,timestamp,1000,1000,1000)
+            putDataOnNetworkTablesLift(sd,False,timestamp,0,0,0)
         print "ready"
         #cv2.namedWindow("ready")
         #cv2.waitKey(0)
