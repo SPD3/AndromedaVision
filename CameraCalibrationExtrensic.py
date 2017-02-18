@@ -61,7 +61,7 @@ def getCameraStream(rawCapture):
 
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
-    correctColorImage = filterColors(img,50,60,100,100,190,255)#(img,55,250,10,60,255,65)
+    correctColorImage = filterColors(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
@@ -72,7 +72,7 @@ def findLiftTarget(img):
     #drawBoundingBoxes(img, correctNumberOfContoursList)
     #cv2.waitKey()
     #cv2.destroyAllWindows()
-    correctSizeList = filterSize(correctNumberOfContoursList,40, 2000,40,2000)
+    correctSizeList = filterSize(correctNumberOfContoursList,10, 2000,10,2000)
     #drawBoundingBoxes(img, correctSizeList)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
@@ -399,8 +399,8 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
 
-objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],[-3.125,0.0,15.75],[3.125,0.0,15.75],[5.125,0.0,10.75],
-                       [3.125,0.0,10.75],[5.125,0.0,15.75]]) #HARD CODE IN THESE VALUES
+objPoints = np.matrix([[-5.125,59.75,15.75],[-3.125,59.75,10.75],[-5.125,59.75,10.75],[-3.125,59.75,15.75],[3.125,59.75,15.75],[5.125,59.75,10.75],
+                       [3.125,59.75,10.75],[5.125,59.75,15.75]]) #HARD CODE IN THESE VALUES
 #objPoints = np.matrix([[0,20.0,15.75],[2,20.0,15.75],[5.25,20.0,15.75],[10.25,20.0,15.75],[0,20.0,10.75],
                       #[2,20.0,10.75],[8.25,20.0,10.75],[10.25,20.0,10.75]])
 def calibrateCameraExtrensic():
@@ -506,8 +506,9 @@ def calibrateCameraExtrensic():
     
     #print 'newCameraMatrix ', newCameraMatrix
     #print 'm_cameraMatrix: ', m_cameraMatrix
-    rvec2, jacobian = cv2.Rodrigues(rvec)
-    return rvec2, tvec, rvec
+    R, jacobian = cv2.Rodrigues(rvec)
+    return R, tvec, rvec
+
 def isRotationMatrix(R):
     Rt = np.transpose(R)
     shouldBeIdentity = np.dot(Rt, R)
@@ -530,14 +531,15 @@ def rotationMatrixToEulerAngles(R):
         y = math.atan2(-R[2,0],sy)
         z = 0
     return np.array([x,y,z])
-rvec2,tvec, rvec = calibrateCameraExtrensic()
-ret = isRotationMatrix(rvec2)
-if ret:
+
+R,tvec, rvec = calibrateCameraExtrensic()
+if isRotationMatrix(R):
     print 'rvec', rvec
     print 'tvec', tvec
-    eulerAngles = rotationMatrixToEulerAngles(rvec2)
+    eulerAngles = rotationMatrixToEulerAngles(R)
     print 'eulerAngles', eulerAngles #,np.linalg.norm(rvec),math.pi/2
     
 
-
+np.save(('/home/pi/Desktop/R.npy'), R)
+np.save(('/home/pi/Desktop/tvec.npy'), tvec)
 
