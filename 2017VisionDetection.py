@@ -17,10 +17,8 @@ import logging
 m_xResolution = 2656 
 m_yResolution = 1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.matrix([[  2.04031106e+03,   0.00000000e+00,   1.36688532e+03],
- [  0.00000000e+00,   2.04279929e+03,   6.65064554e+02],
- [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
-m_distCoeffs = np.matrix([[ 0.18141488, -0.47026778, -0.00274879, -0.00065564,  0.33265707]])
+m_cameraMatrix = np.load('/home/pi/Desktop/mtx.npy')
+m_distCoeffs = np.load('/home/pi/Desktop/dist.npy')
 #print m_cameraMatrix
 ##print np.load('/home/pi/Desktop/mtx.npy')
 #print m_distCoeffs

@@ -13,7 +13,7 @@ objp[:,:2] = np.mgrid[0:9,0:6].T.reshape(-1,2)
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-images = "/home/pi/Pictures"
+images = "/home/pi/Pictures/IntrensicCameraCalibrationImages"
 for imgFileName in os.listdir(images):    
     print "Processing ", imgFileName
     if imgFileName[-4:] != ".png":
@@ -31,7 +31,7 @@ for imgFileName in os.listdir(images):
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
-
+        print corners
         corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
         imgpoints.append(corners2)
 
@@ -42,9 +42,10 @@ for imgFileName in os.listdir(images):
         #cv2.waitKey(0)
     
     cv2.destroyAllWindows()
-    
+    break
 
 print "calibrating camera..."
+print 'objpoints', objpoints
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
 print 'mtx is: ', mtx
 print 'dist is ', dist

@@ -12,10 +12,11 @@ import logging
 m_xResolution = 2656 
 m_yResolution = 1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.matrix([[  2.04031106e+03,   0.00000000e+00,   1.36688532e+03],
- [  0.00000000e+00,   2.04279929e+03,   6.65064554e+02],
+m_cameraMatrix = np.matrix([[  3.52181804e+03,   0.00000000e+00,   1.39113893e+03],
+ [  0.00000000e+00,   3.52592213e+03,   6.30998486e+02],
  [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
-m_distCoeffs = np.matrix([[ 0.18141488, -0.47026778, -0.00274879, -0.00065564,  0.33265707]])
+m_distCoeffs = np.matrix([[  1.56899882e-01,   5.70175327e-02,  -8.04196263e-03,   5.25709066e-04,
+   -1.64438857e+00]])
 print m_cameraMatrix
 print np.load('/home/pi/Desktop/mtx.npy')
 print m_distCoeffs
@@ -25,7 +26,7 @@ m_heightOfHighGoalTarget = 10.0 #Need to get actual number from manual
 m_heightOfLiftTarget = 15.75 #Actual Number From manual
 m_widthOfLift = 8.25 #Actual number from manual; Top Left corner of retroReflective to Top right Corner Of RetroReflective
 m_widthOfRetroReflectiveToLift = m_widthOfLift/2
-m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
+#m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
 def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
@@ -398,62 +399,101 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
     #cv2.imshow("Processed Image", small)
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
-
-objPoints = np.matrix([[-5.125,59.75,15.75],[-3.125,59.75,10.75],[-5.125,59.75,10.75],[-3.125,59.75,15.75],[3.125,59.75,15.75],[5.125,59.75,10.75],
-                       [3.125,59.75,10.75],[5.125,59.75,15.75]]) #HARD CODE IN THESE VALUES
+yOffset = 0#30 + 33.5
+print 'yOffset', yOffset
+objPoints = np.matrix([[-5.125,yOffset,15.75],[-3.125,yOffset,10.75],[-5.125,yOffset,10.75],[-3.125,yOffset,15.75],[3.125,yOffset,15.75],[5.125,yOffset,10.75],
+                       [3.125,yOffset,10.75],[5.125,yOffset,15.75]]) #HARD CODE IN THESE VALUES
 #objPoints = np.matrix([[0,20.0,15.75],[2,20.0,15.75],[5.25,20.0,15.75],[10.25,20.0,15.75],[0,20.0,10.75],
                       #[2,20.0,10.75],[8.25,20.0,10.75],[10.25,20.0,10.75]])
 def calibrateCameraExtrensic():
     imgpoints = []#np.empty((2,8))
     for filename in os.listdir(pictures):
         fullFileName = os.path.join(pictures, filename)
+        print 'fullFileName', fullFileName
         picture = cv2.imread(fullFileName)
         ret, targets = findLiftTarget(picture)
         print 'targets', targets
         for target in targets:
-            offset = 10
+            offset = 25
             x,y,width,height = target
             tempImageCorner1 = picture[y - offset:y+offset, x-offset:x+offset]
             tempImageCorner2 = picture[y + height - offset:y+height+ offset, x+ width-offset:x+width+offset]
-            tempImageCorner3 = picture[y + height - offset:y+height+ offset, x-10:x+offset]
+            tempImageCorner3 = picture[y + height - offset:y+height+ offset, x-offset:x+offset]
             tempImageCorner4 = picture[y - offset:y+ offset, x + width - offset:x+width+ offset]
             #tempCornerImage1
             #correctColorImage = filterColors(tempImage,50,60,100,100,190,255)#(img,55,250,10,60,255,65)
-    
+            
+            
             #print tempImage
             grayTempCorner1 = cv2.cvtColor(tempImageCorner1, cv2.COLOR_BGR2GRAY)
             grayTempCorner2 = cv2.cvtColor(tempImageCorner2, cv2.COLOR_BGR2GRAY)
             grayTempCorner3 = cv2.cvtColor(tempImageCorner3, cv2.COLOR_BGR2GRAY)
             grayTempCorner4 = cv2.cvtColor(tempImageCorner4, cv2.COLOR_BGR2GRAY)
-            
             #cv2.imshow('binary',correctColorImage)
             #cv2.waitKey()
             grayTempCorner1 = np.float32(grayTempCorner1)
             grayTempCorner2 = np.float32(grayTempCorner2)
             grayTempCorner3 = np.float32(grayTempCorner3)
             grayTempCorner4 = np.float32(grayTempCorner4)
+            big3 = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
+            cv2.imshow("gray3", big3)
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
             
-            dst1 = cv2.cornerHarris(grayTempCorner1, 1, 7, 2)
-            #print 'dst1', dst1
-            dst2 = cv2.cornerHarris(grayTempCorner2, 1, 7, 2)
-            dst3 = cv2.cornerHarris(grayTempCorner3, 1, 7, 2)
-            dst4 = cv2.cornerHarris(grayTempCorner4, 1, 7, 2)
+            #grayTempCorner1 = grayTempCorner1 * 255.0/grayTempCorner1.max()
+            dst1 = cv2.cornerHarris(grayTempCorner1, 2, 3, 0.04)
+            print 'dst1.max(), grayTempCorner1.max()', dst1.max(), grayTempCorner1.max()
+            dst2 = cv2.cornerHarris(grayTempCorner2, 2, 3, 0.04)
+            dst3 = cv2.cornerHarris(grayTempCorner3, 2, 3, 0.04)
+            dst4 = cv2.cornerHarris(grayTempCorner4, 2, 3, 0.04)
+            print 'dst3.max(), grayTempCorner3.max()', dst3.max(), grayTempCorner3.max()
             
-            ret, dst1 = cv2.threshold(dst1, 0.01*dst1.max(),255,0)
-            ret, dst2 = cv2.threshold(dst2, 0.01*dst2.max(),255,0)
-            ret, dst3 = cv2.threshold(dst3, 0.01*dst3.max(),255,0)
-            ret, dst4 = cv2.threshold(dst4, 0.01*dst4.max(),255,0)
+
+            #ret1, dst1 = cv2.threshold(dst1, 0.01*dst1.max(),255,0)##
+            #ret2, dst2 = cv2.threshold(dst2, 0.01*dst2.max(),255,0)##
+            #ret3, dst3 = cv2.threshold(dst3, 0.01*dst3.max(),255,0)##
+            #ret4, dst4 = cv2.threshold(dst4, 0.01*dst4.max(),255,0)##
+            print 'ret', ret
             
-            dst1 = np.uint8(dst1)
-            dst2 = np.uint8(dst2)
-            dst3 = np.uint8(dst3)
-            dst4 = np.uint8(dst4)
+            #dst1 = np.uint8(dst1)##
+            #dst2 = np.uint8(dst2)##
+            #dst3 = np.uint8(dst3)##
+            #dst4 = np.uint8(dst4)##
+            #dst3 = cv2.cvtColor(dst3, cv2.COLOR_GRAY2BGR)##
             
-            ret1, labels1, stats1, centroids1 = cv2.connectedComponentsWithStats(dst1)
+            #big3 = cv2.resize(dst3, (0,0), fx = 10, fy = 10)
+            #cv2.imshow("corner3", big3)
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
             
-            ret2, labels2, stats2, centroids2 = cv2.connectedComponentsWithStats(dst2)
-            ret3, labels3, stats3, centroids3 = cv2.connectedComponentsWithStats(dst3)
-            ret4, labels4, stats4, centroids4 = cv2.connectedComponentsWithStats(dst4)
+            #ret1, labels1, stats1, centroids1 = cv2.connectedComponentsWithStats(dst1)##
+            #ret2, labels2, stats2, centroids2 = cv2.connectedComponentsWithStats(dst2)##
+            #ret3, labels3, stats3, centroids3 = cv2.connectedComponentsWithStats(dst3)##
+            #ret4, labels4, stats4, centroids4 = cv2.connectedComponentsWithStats(dst4)##
+
+            minVal, maxVal, minLoc, centroids1 = cv2.minMaxLoc(dst1)
+            minVal, maxVal, minLoc, centroids2 = cv2.minMaxLoc(dst2)
+            minVal, maxVal, minLoc, centroids3 = cv2.minMaxLoc(dst3)
+            minVal, maxVal, minLoc, centroids4 = cv2.minMaxLoc(dst4)
+
+            dst3 = np.uint8(grayTempCorner3*255/dst3.max())
+            dst3 = cv2.cvtColor(dst3, cv2.COLOR_GRAY2BGR)
+            x,y = centroids3
+            dst3[y,x] = (0,0,255)            
+            big3 = cv2.resize(dst3, (0,0), fx = 10, fy = 10)
+            cv2.imshow("corner3", big3)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+
+            centroids1 = [centroids1]
+            centroids2 = [centroids2]
+            centroids3 = [centroids3]
+            centroids4 = [centroids4]
+            print 'centroids1', centroids1
+            print 'centroids2', centroids2
+            print 'centroids3', centroids3
+            print 'centroids4', centroids4
             
             #print 'centroids', centroids
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
@@ -461,6 +501,11 @@ def calibrateCameraExtrensic():
             corners2 = cv2.cornerSubPix(grayTempCorner2,np.float32(centroids2) , (5,5), (-1,-1), criteria)
             corners3 = cv2.cornerSubPix(grayTempCorner3,np.float32(centroids3) , (5,5), (-1,-1), criteria)
             corners4 = cv2.cornerSubPix(grayTempCorner4,np.float32(centroids4) , (5,5), (-1,-1), criteria)
+
+            print 'corners1', corners1
+            print 'corners2', corners2
+            print 'corners3', corners3
+            print 'corners4', corners4
 
             print 'corner1[0][0]',corners1[0][0]
             corners1 = [[corners1[0][0] + x - offset, corners1[0][1] + y -offset]]
@@ -501,7 +546,17 @@ def calibrateCameraExtrensic():
     cv2.destroyAllWindows()
     print 'objPoints', objPoints
     print 'imgpoints', imgpoints
-    ret, rvec, tvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
+    print 'm_cameraMatrix', m_cameraMatrix
+    print 'm_distCoeffs', m_distCoeffs
+    ret, rvec, tvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs, None, None, False, cv2.SOLVEPNP_ITERATIVE)
+    #h,w = picture.shape[:2]
+    #print '[np.array(objPoints)]', [np.array(objPoints)]
+    #print '[np.array(imgpoints)]', [np.array(imgpoints)]
+    #ret, mtx, dist, rvec, tvec = cv2.calibrateCamera([np.array(objPoints)], [np.array(imgpoints)], (w,h),m_cameraMatrix,m_distCoeffs)
+
+    print 'ret', ret
+    print 'rvec', rvec
+    print 'tvec', tvec
     #newCameraMatrix,newRvecs,newTvecs, rotMatX, rotMatY, RotMatZ, eulerAngles = cv2.decomposeProjectionMatrix(imgpoints, m_cameraMatrix, rvec, tvec)
     
     #print 'newCameraMatrix ', newCameraMatrix
