@@ -198,6 +198,7 @@ def filterContours(image, numberOfContours):
     for box in contours:
         if len(box)>= numberOfContours:
             goodBoundingBoxes = goodBoundingBoxes + [cv2.boundingRect(box)]
+
     return goodBoundingBoxes
     #Returns BOUNDING BOXES!!!!
 
@@ -398,6 +399,15 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
     
     #cv2.imshow("Processed Image", small)
 
+#Found on stack overflow; question 7446126
+def getIntersectingPoint(line1, line2):
+    x = origin2 - origin1
+    d1 = point1 - origin1
+    d2 = point2 - origin2
+    cross = np.cross(d1, d2)
+    t1 = x.x*d
+
+
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
 yOffset = 0#30 + 33.5
 print 'yOffset', yOffset
@@ -416,118 +426,63 @@ def calibrateCameraExtrensic():
         for target in targets:
             offset = 25
             x,y,width,height = target
-            tempImageCorner1 = picture[y - offset:y+offset, x-offset:x+offset]
-            tempImageCorner2 = picture[y + height - offset:y+height+ offset, x+ width-offset:x+width+offset]
-            tempImageCorner3 = picture[y + height - offset:y+height+ offset, x-offset:x+offset]
-            tempImageCorner4 = picture[y - offset:y+ offset, x + width - offset:x+width+ offset]
-            #tempCornerImage1
-            #correctColorImage = filterColors(tempImage,50,60,100,100,190,255)#(img,55,250,10,60,255,65)
+            tempImage = picture[y - offset:y+height+offset, x-offset:x+width+offset]
             
             
             #print tempImage
-            grayTempCorner1 = cv2.cvtColor(tempImageCorner1, cv2.COLOR_BGR2GRAY)
-            grayTempCorner2 = cv2.cvtColor(tempImageCorner2, cv2.COLOR_BGR2GRAY)
-            grayTempCorner3 = cv2.cvtColor(tempImageCorner3, cv2.COLOR_BGR2GRAY)
-            grayTempCorner4 = cv2.cvtColor(tempImageCorner4, cv2.COLOR_BGR2GRAY)
-            #cv2.imshow('binary',correctColorImage)
-            #cv2.waitKey()
-            grayTempCorner1 = np.float32(grayTempCorner1)
-            grayTempCorner2 = np.float32(grayTempCorner2)
-            grayTempCorner3 = np.float32(grayTempCorner3)
-            grayTempCorner4 = np.float32(grayTempCorner4)
-            big3 = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
-            cv2.imshow("gray3", big3)
-            #cv2.waitKey(0)
+            grayTempImage = cv2.cvtColor(tempImage, cv2.COLOR_BGR2GRAY)
+
+            grayTempImage = cv2.GaussianBlur(grayTempImage, (5,5),0)
+            big = cv2.resize(np.uint8(grayTempImage*255.0/grayTempImage.max()), (0,0), fx = 1, fy = 1)
+
+            cv2.imshow("input", big)
+            
+            #edges = cv2.Canny(grayTempImage, 8, 16)
+            #contours = cv2.findContours()
+            grayTempImage2 = grayTempImage.copy()
+
+            grayTempImage2, contours, hierarchy = cv2.findContours(grayTempImage2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            
+            leftLinePoints = []
+            rightLinePoints = []
+            topLinePoints = []
+            bottomLinePoints = []
+            print 'len(contours[0])', len(contours[0])
+            for coordinate in contours[0]:
+                coordinateX, coordinateY = coordinate[0]
+                
+                if offset/2 < coordinateX < 1.5*offset and 1.5*offset < coordinateY < height + offset/2:
+                    leftLinePoints.append(coordinate)
+
+                elif offset/2 < coordinateY < 1.5*offset and offset/2 < coordinateX < width + 0.5*offset:
+                    topLinePoints.append(coordinate)
+
+                elif width + 0.5*offset< coordinateX < width + 1.5*offset and offset < coordinateY < height + 0.5*offset:
+                    rightLinePoints.append(coordinate)
+
+                elif height + 0.5*offset < coordinateY < height + 1.5*offset and offset*0.5 < coordinateX < width + offset*1.5:
+                    bottomLinePoints.append(coordinate)
+
+            print 'len(leftLinePoints)', len(leftLinePoints)
+            
+            print 'height', height
+                    
+            print "len(contours)", len(contours[0])
+            leftLine = cv2.fitLine(np.array(leftLinePoints), cv2.DIST_L2, 0, 0,0)
+            rightLine = cv2.fitLine(np.array(rightLinePoints), cv2.DIST_L2, 0, 0,0)
+            topLine = cv2.fitLine(np.array(topLinePoints), cv2.DIST_L2, 0, 0,0)
+            bottomLine = cv2.fitLine(np.array(bottomLinePoints), cv2.DIST_L2, 0, 0,0)
+            print 'leftLine', leftLine
+            print 'rightLine', rightLine
+            print 'topLine', topLine
+            print 'bottomLine', bottomLine
+            
+            #big = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
+           
             #cv2.destroyAllWindows()
-            
-            #grayTempCorner1 = grayTempCorner1 * 255.0/grayTempCorner1.max()
-            dst1 = cv2.cornerHarris(grayTempCorner1, 2, 3, 0.04)
-            print 'dst1.max(), grayTempCorner1.max()', dst1.max(), grayTempCorner1.max()
-            dst2 = cv2.cornerHarris(grayTempCorner2, 2, 3, 0.04)
-            dst3 = cv2.cornerHarris(grayTempCorner3, 2, 3, 0.04)
-            dst4 = cv2.cornerHarris(grayTempCorner4, 2, 3, 0.04)
-            print 'dst3.max(), grayTempCorner3.max()', dst3.max(), grayTempCorner3.max()
-            
-
-            #ret1, dst1 = cv2.threshold(dst1, 0.01*dst1.max(),255,0)##
-            #ret2, dst2 = cv2.threshold(dst2, 0.01*dst2.max(),255,0)##
-            #ret3, dst3 = cv2.threshold(dst3, 0.01*dst3.max(),255,0)##
-            #ret4, dst4 = cv2.threshold(dst4, 0.01*dst4.max(),255,0)##
-            print 'ret', ret
-            
-            #dst1 = np.uint8(dst1)##
-            #dst2 = np.uint8(dst2)##
-            #dst3 = np.uint8(dst3)##
-            #dst4 = np.uint8(dst4)##
-            #dst3 = cv2.cvtColor(dst3, cv2.COLOR_GRAY2BGR)##
-            
-            #big3 = cv2.resize(dst3, (0,0), fx = 10, fy = 10)
-            #cv2.imshow("corner3", big3)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
-            
-            #ret1, labels1, stats1, centroids1 = cv2.connectedComponentsWithStats(dst1)##
-            #ret2, labels2, stats2, centroids2 = cv2.connectedComponentsWithStats(dst2)##
-            #ret3, labels3, stats3, centroids3 = cv2.connectedComponentsWithStats(dst3)##
-            #ret4, labels4, stats4, centroids4 = cv2.connectedComponentsWithStats(dst4)##
-
-            minVal, maxVal, minLoc, centroids1 = cv2.minMaxLoc(dst1)
-            minVal, maxVal, minLoc, centroids2 = cv2.minMaxLoc(dst2)
-            minVal, maxVal, minLoc, centroids3 = cv2.minMaxLoc(dst3)
-            minVal, maxVal, minLoc, centroids4 = cv2.minMaxLoc(dst4)
-
-            dst3 = np.uint8(grayTempCorner3*255/dst3.max())
-            dst3 = cv2.cvtColor(dst3, cv2.COLOR_GRAY2BGR)
-            x,y = centroids3
-            dst3[y,x] = (0,0,255)            
-            big3 = cv2.resize(dst3, (0,0), fx = 10, fy = 10)
-            cv2.imshow("corner3", big3)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
-
-
-            centroids1 = [centroids1]
-            centroids2 = [centroids2]
-            centroids3 = [centroids3]
-            centroids4 = [centroids4]
-            print 'centroids1', centroids1
-            print 'centroids2', centroids2
-            print 'centroids3', centroids3
-            print 'centroids4', centroids4
-            
-            #print 'centroids', centroids
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-            corners1 = cv2.cornerSubPix(grayTempCorner1,np.float32(centroids1) , (5,5), (-1,-1), criteria)
-            corners2 = cv2.cornerSubPix(grayTempCorner2,np.float32(centroids2) , (5,5), (-1,-1), criteria)
-            corners3 = cv2.cornerSubPix(grayTempCorner3,np.float32(centroids3) , (5,5), (-1,-1), criteria)
-            corners4 = cv2.cornerSubPix(grayTempCorner4,np.float32(centroids4) , (5,5), (-1,-1), criteria)
-
-            print 'corners1', corners1
-            print 'corners2', corners2
-            print 'corners3', corners3
-            print 'corners4', corners4
-
-            print 'corner1[0][0]',corners1[0][0]
-            corners1 = [[corners1[0][0] + x - offset, corners1[0][1] + y -offset]]
-            corners2 = [[corners2[0][0] + x - offset + width,corners2[0][1]+ y - offset + height]]
-            corners3 = [[corners3[0][0] + x - offset ,corners3[0][1]+ height + y - offset]]
-            corners4 = [[corners4[0][0] + x - offset + width ,corners4[0][1] + y - offset]]
-            print 'len corners', len(corners1) + len(corners2) + len(corners3) + len(corners4)
-            #np.append(imgpoints,corners)
-            #imgpoints.append(corners)
-            if imgpoints == []:
-                imgpoints = corners1
-                imgpoints = np.append(imgpoints,corners2,0)
-                imgpoints = np.append(imgpoints,corners3,0)
-                imgpoints = np.append(imgpoints,corners4,0)
-                print 'imgpoints', imgpoints
-            else:
-                imgpoints = np.append(imgpoints, corners1,0)
-                imgpoints = np.append(imgpoints, corners2,0)
-                imgpoints = np.append(imgpoints, corners3,0)
-                imgpoints = np.append(imgpoints, corners4,0)
-                print 'imgpoints', imgpoints
-                
+            break
         
             print 'width', width
             print 'height', height
