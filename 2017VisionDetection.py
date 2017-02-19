@@ -64,6 +64,8 @@ m_lateralRightOffsetOfShooter = 0.0 #Need to get actual number from Robot
 m_forwardOffsetOfShooter = 0.0 #Need to get actual number from Robot
 m_lateralRightOffsetOfGearPlacer = 0.0 #Need to get actual number from Robot
 m_forwardOffsetOfGearPlacer = 0.0 #Need to get actual number from Robot
+m_rightOffsetOfGearPlacerFromCamera = 0.0
+m_forwardOffsetOfGearPlacerFromCamera = 0.0
 #m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
 ##print m_centerXOfImage, "and", m_centerYOfImage
@@ -709,6 +711,8 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
             distanceToMoveLaterally = distanceToMoveLaterally + 3.135
         else:
             distanceToMoveLaterally = distanceToMoveLaterally - 5.135
+        distanceToMoveLaterally = distanceToMoveLaterally + m_rightOffsetOfGearPlacerFromCamera
+        distanceToMoveForward = distanceToMoveForward + m_forwardOffsetOfGearPlacerFromCamera
         return distanceToMoveLaterally, distanceToMoveForward
     
     firstBoundingBox = boundingBoxesOfTargets[0]
@@ -720,6 +724,10 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
 
     distanceToMoveLaterally = (secondDistanceToMoveLaterally + firstDistanceToMoveLaterally)/2
     distanceToMoveForwardLift = (secondDistanceToMoveForwardLift + firstDistanceToMoveForwardLift)/2
+
+    distanceToMoveLaterally = distanceToMoveLaterally + m_rightOffsetOfGearPlacerFromCamera
+    distanceToMoveForward = distanceToMoveForward + m_forwardOffsetOfGearPlacerFromCamera
+        
     return distanceToMoveLaterally, distanceToMoveForwardLift
     
     
