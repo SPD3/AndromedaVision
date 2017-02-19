@@ -46,10 +46,10 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
 
 
 #extrensic parameters
-m_heightOfCamera = 8.125 #Need to get actual number from Robot
+m_heightOfCamera = 11.75 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
-m_degreesAngleOfCamera = 16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
+m_degreesAngleOfCamera = 0 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
 ##print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
 m_radiansAngleofCamera = (m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
 m_RCamera = np.load('/home/pi/Desktop/R.npy')#NEED TO LOAD THESE NUMBERS
@@ -99,9 +99,9 @@ def getCameraStream(rawCapture):
         #undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
         ##print 'undistorted'
         small = cv2.resize(image, (0,0), fx = 0.2, fy = 0.2)
-        cv2.imshow('h', small)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow('h', small)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
         return timestamp,image
     
 def null(x):
@@ -696,6 +696,7 @@ def rotationMatrixToEulerAngles(R):
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget):
     oppositeAngle = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
     distanceAwayLift = getDistanceAwayLift(boundingBoxOfTarget)
+    print distanceAwayLift
     distanceToMoveLaterally = math.sin(oppositeAngle)*distanceAwayLift
     distanceToMoveForwardLift = math.cos(oppositeAngle)*distanceAwayLift
     return distanceToMoveLaterally, distanceToMoveForwardLift
@@ -703,7 +704,12 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfT
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTargets):
     if len(boundingBoxesOfTargets) == 1:
         boundingBoxOfTarget = boundingBoxesOfTargets[0]
-        return getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
+        distanceToMoveLaterally, distanceToMoveForward = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
+        if distanceToMoveLaterally < 0:
+            distanceToMoveLaterally = distanceToMoveLaterally + 3.135
+        else:
+            distanceToMoveLaterally = distanceToMoveLaterally - 5.135
+        return distanceToMoveLaterally, distanceToMoveForward
     
     firstBoundingBox = boundingBoxesOfTargets[0]
     secondBoundingBox = boundingBoxesOfTargets[1]
