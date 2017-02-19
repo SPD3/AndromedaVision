@@ -177,6 +177,9 @@ def findLiftTarget(img):
         drawBoundingBoxes(img, betterFilteredList)
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
+        if betterFilteredList != 1 and correctLengthToWidthRatioList == 1:
+            return True, correctLengthToWidthRatioList
+        
         return len(betterFilteredList) == 2, betterFilteredList
         
     if len(correctLengthToWidthRatioList) == 2 :
@@ -690,6 +693,30 @@ def rotationMatrixToEulerAngles(R):
         z = 0
     return np.array([x,y,z])
 
+def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget):
+    oppositeAngle = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
+    distanceAwayLift = getDistanceAwayLift(boundingBoxOfTarget)
+    distanceToMoveLaterally = math.sin(oppositeAngle)*distanceAwayLift
+    distanceToMoveForwardLift = math.cos(oppositeAngle)*distanceAwayLift
+    return distanceToMoveLaterally, distanceToMoveForwardLift
+
+def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTargets):
+    if len(boundingBoxesOfTargets) == 1:
+        boundingBoxOfTarget = boundingBoxesOfTargets[0]
+        return getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
+    
+    firstBoundingBox = boundingBoxesOfTargets[0]
+    secondBoundingBox = boundingBoxesOfTargets[1]
+
+    firstDistanceToMoveLaterally,firstDistanceToMoveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(firstBoundingBox)
+
+    secondDistanceToMoveLaterally,secondDistanceToMoveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(secondBoundingBox)
+
+    distanceToMoveLaterally = (secondDistanceToMoveLaterally + firstDistanceToMoveLaterally)/2
+    distanceToMoveForwardLift = (secondDistanceToMoveForwardLift + firstDistanceToMoveForwardLift)/2
+    return distanceToMoveLaterally, distanceToMoveForwardLift
+    
+    
 def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
     firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
     secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
@@ -801,15 +828,17 @@ def main():
         #retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
         retLift,liftTargets = findLiftTarget(cameraStream)
         if retLift:
-            robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(cameraStream, liftTargets)
+            #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(cameraStream, liftTargets)
             #print 'robotTvecAfterTurning', robotTvecAfterTurning
-            eulerAngles = rotationMatrixToEulerAngles(robotR)
-            radiansToTurnLift = eulerAngles[2]
-            distanceToMoveLaterallyLift = robotTvecAfterTurning[0]
-            distanceToDriveForwardLift = robotTvecAfterTurning[1]
+            #eulerAngles = rotationMatrixToEulerAngles(robotR)
+            #radiansToTurnLift = eulerAngles[2]
+            #distanceToMoveLaterallyLift = robotTvecAfterTurning[0]
+            #distanceToDriveForwardLift = robotTvecAfterTurning[1]
+            distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets)
+            radiansToTurnLift = 0
             putDataOnNetworkTablesLift(sd,True,timestamp,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
-            degreesToTurn = radiansToTurnLift*(180/math.pi)
-            print "degreesToTurnLift: ", degreesToTurn
+            #degreesToTurn = radiansToTurnLift*(180/math.pi)
+            #print "degreesToTurnLift: ", degreesToTurn
             print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"
             print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
             
