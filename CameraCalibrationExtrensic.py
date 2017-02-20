@@ -412,6 +412,10 @@ def getIntersectingPoint(line1, line2):
     t1 = (x[0,0]*d2[1,0] - x[1,0]*d2[0,0])/ cross
     return origin1 + d1 * t1
 
+def getBetterCoordinateMatrix(matrix):
+    x = matrix[0][0]
+    y = matrix[1][0]
+    return [x,y]
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
 yOffset = 0#30 + 33.5
@@ -435,18 +439,18 @@ def calibrateCameraExtrensic():
             
             
             #print tempImage
-            grayTempImage = cv2.cvtColor(tempImage, cv2.COLOR_BGR2GRAY)
+            correctColorImage = filterColors(tempImage,55,250,10,60,255,65)
 
-            grayTempImage = cv2.GaussianBlur(grayTempImage, (5,5),0)
-            big = cv2.resize(np.uint8(grayTempImage*255.0/grayTempImage.max()), (0,0), fx = 1, fy = 1)
+            correctColorImage = cv2.GaussianBlur(correctColorImage, (5,5),0)
+            #big = cv2.resize(np.uint8(grayTempImage*255.0/grayTempImage.max()), (0,0), fx = 1, fy = 1)
 
-            cv2.imshow("input", big)
+            #cv2.imshow("input", big)
             
             #edges = cv2.Canny(grayTempImage, 8, 16)
             #contours = cv2.findContours()
-            grayTempImage2 = grayTempImage.copy()
+            correctColorImage2 = correctColorImage.copy()
 
-            grayTempImage2, contours, hierarchy = cv2.findContours(grayTempImage2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            correctColorImage2, contours, hierarchy = cv2.findContours(correctColorImage2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             
             leftLinePoints = []
             rightLinePoints = []
@@ -486,23 +490,35 @@ def calibrateCameraExtrensic():
             topRightCorner = getIntersectingPoint(topLine, rightLine)
             bottomRightCorner = getIntersectingPoint(bottomLine, rightLine)
             bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine)
+
+            topLeftCorner = getBetterCoordinateMatrix(topLeftCorner)
+            topRightCorner = getBetterCoordinateMatrix(topRightCorner)
+            bottomRightCorner = getBetterCoordinateMatrix(bottomRightCorner)
+            bottomLeftCorner = getBetterCoordinateMatrix(bottomLeftCorner)
             
             print 'topLeftCorner', topLeftCorner
             print 'topRightCorner', topRightCorner
             print 'bottomRightCorner', bottomRightCorner
             print 'bottomLeftCorner', bottomLeftCorner
+            
+            topLeftCorner = [topLeftCorner[0] + x - offset, topLeftCorner[1] + y - offset]
+            topRightCorner = [topRightCorner[0] + x - offset, topRightCorner[1] + y - offset]
+            bottomRightCorner = [bottomRightCorner[0] + x - offset, bottomRightCorner[1] + y - offset]
+            bottomLeftCorner = [bottomLeftCorner[0] + x - offset, bottomLeftCorner[1] + y - offset]
+            
+            imgpoints.append(topLeftCorner)
+            imgpoints.append(bottomRightCorner)
+            imgpoints.append(bottomLeftCorner)
+            imgpoints.append(topRightCorner)
+            
 
+            
             #big = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
            
             #cv2.destroyAllWindows()
-            cv2.waitKey(0)
             cv2.destroyAllWindows()
-            break
-        
-            print 'width', width
-            print 'height', height
             
-            
+
             #res = np.hstack((centroids1, corners1))
             #res = np.int0(res)
             #tempImage[res[:,1],res[:,0]] = [0,0,255]
@@ -513,6 +529,9 @@ def calibrateCameraExtrensic():
             
             #cv2.imshow('Corners', tempImageCorner1)
             #cv2.waitKey()
+        print 'len(imgpoints)', len(imgpoints)
+        
+    imgpoints = np.array(imgpoints)
     cv2.destroyAllWindows()
     print 'objPoints', objPoints
     print 'imgpoints', imgpoints
@@ -564,7 +583,8 @@ if isRotationMatrix(R):
     eulerAngles = rotationMatrixToEulerAngles(R)
     print 'eulerAngles', eulerAngles #,np.linalg.norm(rvec),math.pi/2
     
-
+inverseR = np.linalg.inv(R)
+print 'real Tvec: ', -(inverseR.dot(tvec))
 np.save(('/home/pi/Desktop/R.npy'), R)
 np.save(('/home/pi/Desktop/tvec.npy'), tvec)
 

@@ -32,6 +32,7 @@ for imgFileName in os.listdir(images):
     if ret == True:
         objpoints.append(objp)
         corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
+        print 'corners2', corners2
         imgpoints.append(corners2)
 
         # Draw and display the corners
@@ -41,9 +42,10 @@ for imgFileName in os.listdir(images):
         #cv2.waitKey(0)
     
     cv2.destroyAllWindows()
-    
+    break
 
 print "calibrating camera..."
+print 'imgpoints', imgpoints
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
 print 'mtx is: ', mtx
