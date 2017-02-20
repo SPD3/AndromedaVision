@@ -46,14 +46,14 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
 
 
 #extrensic parameters
-m_heightOfCamera = 11.75 #Need to get actual number from Robot
+m_heightOfCamera = 8.25 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
-m_degreesAngleOfCamera = 0 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
+m_degreesAngleOfCamera = 18 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
 ##print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
 m_radiansAngleofCamera = (m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
-m_RCamera = np.load('/home/pi/Desktop/R.npy')#NEED TO LOAD THESE NUMBERS
-m_tvecCamera = np.load('/home/pi/Desktop/tvec.npy')#NEED TO LOAD THESE NUMBERS
+#m_RCamera = np.load('/home/pi/Desktop/R.npy')#NEED TO LOAD THESE NUMBERS
+#m_tvecCamera = np.load('/home/pi/Desktop/tvec.npy')#NEED TO LOAD THESE NUMBERS
 
 #offset parameteres
 m_lateralRightOffsetOfLiftCamera = 0.0 #Need to get actual number from Robot
@@ -100,10 +100,10 @@ def getCameraStream(rawCapture):
         ##print 'undistorting'
         #undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
         ##print 'undistorted'
-        small = cv2.resize(image, (0,0), fx = 0.2, fy = 0.2)
-        #cv2.imshow('h', small)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
+        cv2.imshow('h', small)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         return timestamp,image
     
 def null(x):
@@ -128,25 +128,25 @@ def findLiftTarget(img):
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
-    #print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
+    print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
     correctSizeList = filterSize(correctNumberOfContoursList,40, 2000,40,2000)
     #drawBoundingBoxes(img, correctSizeList)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
-    #print 'correctSizeList: ',len(correctSizeList)
+    print 'correctSizeList: ',len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,0,3)
-    #print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
+    print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
     
-    #print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
+    print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     
     
     #correctDistanceBetweenTargetsList = filterByOtherTargetLift(correctBlack2WhiteRatioList, 4.4, 25, 30)
@@ -175,11 +175,11 @@ def findLiftTarget(img):
         #print '[betterFilteredList]: ', [betterFilteredList]
         betterFilteredList = filterByOtherTargetLift(betterFilteredList,5,0.2,0.5)
         #print '1'
-        #print 'final result: ', len(betterFilteredList)
+        print 'final result: ', len(betterFilteredList)
         drawBoundingBoxes(img, betterFilteredList)
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
-        if betterFilteredList != 1 and correctLengthToWidthRatioList == 1:
+        if len(betterFilteredList) != 2 and len(correctLengthToWidthRatioList) == 1:
             return True, correctLengthToWidthRatioList
         
         return len(betterFilteredList) == 2, betterFilteredList
@@ -572,7 +572,7 @@ def getDistanceAwayLift(boundingBoxOfTarget):
     ##print math.tan(offsetAddedElevationAngle)
     ##print
     distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
-    #return distanceAwayLift
+    print 'distanceAwayLift', distanceAwayLift
     return distanceAwayLift
 
 def get0(vector):
@@ -726,7 +726,7 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
     distanceToMoveForwardLift = (secondDistanceToMoveForwardLift + firstDistanceToMoveForwardLift)/2
 
     distanceToMoveLaterally = distanceToMoveLaterally + m_rightOffsetOfGearPlacerFromCamera
-    distanceToMoveForward = distanceToMoveForward + m_forwardOffsetOfGearPlacerFromCamera
+    distanceToMoveForwardLift = distanceToMoveForwardLift + m_forwardOffsetOfGearPlacerFromCamera
         
     return distanceToMoveLaterally, distanceToMoveForwardLift
     

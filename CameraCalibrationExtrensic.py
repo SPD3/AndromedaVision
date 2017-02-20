@@ -401,11 +401,16 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
 
 #Found on stack overflow; question 7446126
 def getIntersectingPoint(line1, line2):
+    origin1 = line1[2:4, :] #np.mat([line1[2], line1[3]])
+    origin2 = line2[2:4, :] #np.mat([line2[2], line2[3]])
+    d1 = line1[0:2, :] #np.mat([line1[0], line1[1]])
+    d2 = line2[0:2, :] #np.mat([line2[0], line2[1]])
     x = origin2 - origin1
-    d1 = point1 - origin1
-    d2 = point2 - origin2
-    cross = np.cross(d1, d2)
-    t1 = x.x*d
+    #d1 = point1 - origin1
+    #d2 = point2 - origin2
+    cross = d1[0,0]*d2[1,0] - d1[1,0]*d2[0,0]   
+    t1 = (x[0,0]*d2[1,0] - x[1,0]*d2[0,0])/ cross
+    return origin1 + d1 * t1
 
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
@@ -476,7 +481,17 @@ def calibrateCameraExtrensic():
             print 'rightLine', rightLine
             print 'topLine', topLine
             print 'bottomLine', bottomLine
+
+            topLeftCorner = getIntersectingPoint(leftLine, topLine)
+            topRightCorner = getIntersectingPoint(topLine, rightLine)
+            bottomRightCorner = getIntersectingPoint(bottomLine, rightLine)
+            bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine)
             
+            print 'topLeftCorner', topLeftCorner
+            print 'topRightCorner', topRightCorner
+            print 'bottomRightCorner', bottomRightCorner
+            print 'bottomLeftCorner', bottomLeftCorner
+
             #big = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
            
             #cv2.destroyAllWindows()
