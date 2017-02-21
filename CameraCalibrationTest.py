@@ -42,10 +42,10 @@ for imgFileName in os.listdir(images):
         #cv2.waitKey(0)
     
     cv2.destroyAllWindows()
-    break
+    
 
 print "calibrating camera..."
-print 'imgpoints', imgpoints
+
 
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, (w,h),None,None)
 print 'mtx is: ', mtx

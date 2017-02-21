@@ -418,7 +418,7 @@ def getBetterCoordinateMatrix(matrix):
     return [x,y]
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
-yOffset = 0#30 + 33.5
+yOffset = 38.5
 print 'yOffset', yOffset
 objPoints = np.matrix([[-5.125,yOffset,15.75],[-3.125,yOffset,10.75],[-5.125,yOffset,10.75],[-3.125,yOffset,15.75],[3.125,yOffset,15.75],[5.125,yOffset,10.75],
                        [3.125,yOffset,10.75],[5.125,yOffset,15.75]]) #HARD CODE IN THESE VALUES
@@ -489,7 +489,7 @@ def calibrateCameraExtrensic():
             topLeftCorner = getIntersectingPoint(leftLine, topLine)
             topRightCorner = getIntersectingPoint(topLine, rightLine)
             bottomRightCorner = getIntersectingPoint(bottomLine, rightLine)
-            bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine)
+            bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine) 
 
             topLeftCorner = getBetterCoordinateMatrix(topLeftCorner)
             topRightCorner = getBetterCoordinateMatrix(topRightCorner)

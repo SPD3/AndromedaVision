@@ -14,8 +14,8 @@ import logging
 
 
 #interensic paramaters
-m_xResolution = 2656 
-m_yResolution = 1328
+m_xResolution = 1024 #2656 
+m_yResolution = 768 #1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
 m_cameraMatrix = np.load('/home/pi/Desktop/mtx.npy')
 m_distCoeffs = np.load('/home/pi/Desktop/dist.npy')
@@ -49,11 +49,9 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
 m_heightOfCamera = 8.25 #Need to get actual number from Robot
 m_heightOfHighGoalTargetFromCamera = m_heightOfHighGoalTarget - m_heightOfCamera
 m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
-m_degreesAngleOfCamera = 18 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
+#m_degreesAngleOfCamera = 18 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
 ##print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
-m_radiansAngleofCamera = (m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
-#m_RCamera = np.load('/home/pi/Desktop/R.npy')#NEED TO LOAD THESE NUMBERS
-#m_tvecCamera = np.load('/home/pi/Desktop/tvec.npy')#NEED TO LOAD THESE NUMBERS
+
 
 #offset parameteres
 m_lateralRightOffsetOfLiftCamera = 0.0 #Need to get actual number from Robot
@@ -73,10 +71,40 @@ m_forwardOffsetOfGearPlacerFromCamera = 0.0
 
 m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
+#Found at learnopencv.com
+def isRotationMatrix(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype = R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-6
+
+def rotationMatrixToEulerAngles(R):
+    assert(isRotationMatrix(R))
+
+    sy = math.sqrt(R[0,0]*R[0,0] + R[1,0]*R[1,0])
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2,1], R[2,2])
+        y = math.atan2(-R[2,0],sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else:
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0],sy)
+        z = 0
+    return np.array([x,y,z])
+
+m_RCamera = np.load('/home/pi/Desktop/R.npy')
+m_tvecCamera = np.load('/home/pi/Desktop/tvec.npy')
+m_eulerAngles = rotationMatrixToEulerAngles(m_RCamera)
+m_radiansAngleofCamera = math.pi/2 - m_eulerAngles[0]#(m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
+print 'm_radiansAngleofCamera', m_radiansAngleofCamera
+
 def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
     m_camera.framerate = 10
-    m_camera.shutter_speed = 900
+    m_camera.shutter_speed = 400
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
     m_camera.flash_mode = 'off'
@@ -84,6 +112,7 @@ def cameraStreamInit():
     m_camera.drc_strength = 'off'
     m_camera.led = False
     m_camera.awb_gains = 1
+    #m_camera.MAX_RESOLUTION
     rawCapture = PiRGBArray(m_camera, size=(m_xResolution, m_yResolution))
  
     # allow the camera to warmup
@@ -98,13 +127,14 @@ def getCameraStream(rawCapture):
         h,w = image.shape[:2]
         newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(m_cameraMatrix,m_distCoeffs,(w,h),1,(w,h))
         ##print 'undistorting'
-        #undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
+        undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
         ##print 'undistorted'
-        small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
-        cv2.imshow('h', small)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        return timestamp,image
+        #small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
+        #cv2.imshow('h', image)
+        #cv2.imwrite("/home/pi/Pictures/test.png", image)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        return timestamp,undistortedImage
     
 def null(x):
     pass
@@ -129,7 +159,7 @@ def findLiftTarget(img):
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
     print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
-    correctSizeList = filterSize(correctNumberOfContoursList,40, 2000,40,2000)
+    correctSizeList = filterSize(correctNumberOfContoursList,5, 2000,5,2000)
     #drawBoundingBoxes(img, correctSizeList)
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
@@ -142,9 +172,9 @@ def findLiftTarget(img):
     print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
     #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
     
-    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
+    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.3,0.7)
     
     print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     
@@ -350,6 +380,7 @@ def filterLength2WidthRatio(goodBoundingBoxes, lowLengthToWidthRatio, highLength
     for box in goodBoundingBoxes:
         width =  box[2]
         height =  box[3]
+        print 'lowLengthToWidthRatio < (width + 0.0)/ (height+ 0.0) < highLengthToWidthRatio', (width + 0.0)/ (height+ 0.0)
         if lowLengthToWidthRatio < (width + 0.0)/ (height+ 0.0) < highLengthToWidthRatio:
             betterBoundingBoxes = betterBoundingBoxes +  [box]
     return betterBoundingBoxes
@@ -361,7 +392,7 @@ def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, black
         x,y,width,height = box
         tempImage = image[y+height/2:y+height, x:x+width]
         numberOfWhitePixels = cv2.countNonZero(tempImage)
-        #print 'box', box
+        print 'box', box
         if blackToWhiteRatioMin < ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
             #print "the good one: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
@@ -472,7 +503,7 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffsetRatio, heightOffset
                 if secondY - yOffsetRatio*secondHeight < y < secondY + yOffsetRatio*secondHeight :
                     #print "passed Y test"
                     if (secondHeight-heightOffsetRatio*secondHeight < height < secondHeight + heightOffsetRatio*secondHeight or
-                        height-heightOffset*height < secondHeight < height + heightOffset*height):
+                        height-heightOffsetRatio*height < secondHeight < height + heightOffsetRatio*height):
                         #print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
@@ -519,9 +550,9 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
     for box in goodBoundingBoxes:
         x,y,width,height = box
         copy = cv2.rectangle(copy,(x,y),((x + width), (y + height)),(255,0,0), 3)
-    small = cv2.resize(copy, (0,0), fx = 0.2, fy = 0.2)
+    #small = cv2.resize(copy, (0,0), fx = 0.2, fy = 0.2)
     
-    #cv2.imshow("Processed Image", small)
+    #cv2.imshow("Processed Image", copy)
     
 
 #These are the Math functions
@@ -679,21 +710,8 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(picture, bounding
     robotTvecAfterTurning = robotR.dot(robotTvec)
     return robotR, robotTvecAfterTurning
 
-#Found at learnopencv.com
-def rotationMatrixToEulerAngles(R):
 
-    sy = math.sqrt(R[0,0]*R[0,0] + R[1,0]*R[1,0])
-    singular = sy < 1e-6
 
-    if not singular:
-        x = math.atan2(R[2,1], R[2,2])
-        y = math.atan2(-R[2,0],sy)
-        z = math.atan2(R[1,0], R[0,0])
-    else:
-        x = math.atan2(-R[1,2], R[1,1])
-        y = math.atan2(-R[2,0],sy)
-        z = 0
-    return np.array([x,y,z])
 
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget):
     oppositeAngle = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
@@ -799,7 +817,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
 
 def initNetworkTables():
     logging.basicConfig(level=logging.DEBUG)
-    ip = "192.168.7.71"
+    ip = "10.49.5.77"
     NetworkTables.initialize(server=ip)
     sd = NetworkTables.getTable("VisionProcessing")
     return sd
