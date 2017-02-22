@@ -55,9 +55,9 @@ def getCameraStream(rawCapture):
         print 'undistorting'
         #undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
         print 'undistorted'    
-        #cv2.imshow('h', undistortedImage)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        cv2.imshow('h', undistortedImage)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         return timestamp,image
 
 def findLiftTarget(img):
