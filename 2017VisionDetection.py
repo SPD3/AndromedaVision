@@ -44,7 +44,6 @@ m_widthOfRetroReflectiveToLift = m_widthOfLift/2
 objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],[-3.125,0.0,15.75],[3.125,0.0,15.75],[5.125,0.0,10.75],
                        [3.125,0.0,10.75],[5.125,0.0,15.75]]) #HARD CODE IN THESE VALUES
 
-
 #m_degreesAngleOfCamera = 18 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
 #print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
 
@@ -110,7 +109,7 @@ m_heightOfLiftTargetFromCamera = m_heightOfLiftTarget - m_heightOfCamera
 def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
     m_camera.framerate = 10
-    m_camera.shutter_speed = 400
+    m_camera.shutter_speed = 900
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
     m_camera.flash_mode = 'off'
@@ -122,7 +121,7 @@ def cameraStreamInit():
     rawCapture = PiRGBArray(m_camera, size=(m_xResolution, m_yResolution))
  
     # allow the camera to warmup
-    time.sleep(0.1)
+    time.sleep(2)
     return rawCapture
     
 def getCameraStream(rawCapture):
@@ -147,14 +146,15 @@ def null(x):
 
 def setupImageWindow():
     #cv2.namedWindow("Original Image")
-    cv2.namedWindow("Processed Image")
-    cv2.createTrackbar('deltaX', 'Processed Image',0,10,null)
-    cv2.createTrackbar('lowDeltaYLimit', 'Processed Image',0,100,null)
-    cv2.createTrackbar('highDeltaYLimit', 'Processed Image',0,100,null)
+ #   cv2.namedWindow("Processed Image")
+  #  cv2.createTrackbar('deltaX', 'Processed Image',0,10,null)
+   # cv2.createTrackbar('lowDeltaYLimit', 'Processed Image',0,100,null)
+    #cv2.createTrackbar('highDeltaYLimit', 'Processed Image',0,100,null)
     #cv2.createTrackbar('maxWidth', 'Processed Image',0,500,null)
     #cv2.createTrackbar('maxS', 'Processed Image',0,255,null)
     #cv2.createTrackbar('maxV', 'Processed Image',0,255,null)
-  
+    pass
+    
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,55,210,10,60,255,65)#(img,55,250,10,60,255,65)
@@ -165,24 +165,27 @@ def findLiftTarget(img):
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
     print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
-    correctSizeList = filterSize(correctNumberOfContoursList,5, 2000,5,2000)
-    #drawBoundingBoxes(img, correctSizeList)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    correctSizeList = filterSize(correctNumberOfContoursList,10, 2000,10,2000)
+    drawBoundingBoxes(img, correctSizeList)
+    ##cv2.waitKey(0)
+    cv2.destroyAllWindows()
     
     print 'correctSizeList: ',len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,0,3)
+    ##cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,-1,0.5)
     print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
-    #cv2.waitKey(0)
+    ##cv2.waitKey(0)
     cv2.destroyAllWindows()
     
-    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.3,0.7)
+    correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
     
     print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
+    drawBoundingBoxes(img, correctLengthToWidthRatioList)
+    ##cv2.waitKey(0)
+    cv2.destroyAllWindows()
     
     
     #correctDistanceBetweenTargetsList = filterByOtherTargetLift(correctBlack2WhiteRatioList, 4.4, 25, 30)
@@ -213,8 +216,8 @@ def findLiftTarget(img):
         #print '1'
         print 'final result: ', len(betterFilteredList)
         drawBoundingBoxes(img, betterFilteredList)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        ##cv2.waitKey(0)
+        cv2.destroyAllWindows()
         if len(betterFilteredList) != 2 and len(correctLengthToWidthRatioList) == 1:
             return True, correctLengthToWidthRatioList
         
@@ -246,8 +249,8 @@ def findLiftTarget(img):
                 filteredList = correctLengthToWidthRatioList
         #print 'filteredList 1: ', filteredList
         drawBoundingBoxes(img, filteredList)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        ##cv2.waitKey(0)
+        cv2.destroyAllWindows()
         filteredList = filterByOtherTargetLift(filteredList, 5, 0.2, 0.5)
         #print 'filteredList 2: ', filteredList
         #print
@@ -256,14 +259,14 @@ def findLiftTarget(img):
          #   #print box
             
           #  drawBoundingBoxes(img, filteredList)
-           # #cv2.waitKey(0)
+           # ##cv2.waitKey(0)
             #cv2.destroyAllWindows()
         
         if len(filteredList) == 2:
-            #print 'YES final result: ', len(filteredList)
+            print 'YES final result: ', len(filteredList)
             return True, filteredList
         
-    #print 'final result: 0'
+    print 'final result: 0'
     return False, correctBlack2WhiteRatioList
     
     
@@ -311,20 +314,20 @@ def findHighGoalTarget(img):
         #drawBoundingBoxes(preparedImage, correctLeftHalfBlack2WhiteRatioList)
         
         
-        #key = #cv2.waitKey(0)
+        #key = ##cv2.waitKey(0)
 #        if key == ord('q'): # quit
  #           return None
   #      elif key == ord('g'): # good
    #         break
         # Try again on any other key
     #print
-#    #print minRatio
- #   #print maxRatio
-  #  #print 
-   # #print 
+#    ##print minRatio
+ #   ##print maxRatio
+  #  ##print 
+   # ##print 
     #print 
-#    #print 
- #   #print
+#    ##print 
+ #   ##print
     #correctDistanceBetweenTargets = filterByDistanceBetweenTargets(correctBlack2WhiteRatioList)
     #print len(correctDistanceBetweenTargets)
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
@@ -393,14 +396,18 @@ def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, black
     for box in goodBoundingBoxes:
         x,y,width,height = box
         tempImage = image[y+height/2:y+height, x:x+width]
+        
         numberOfWhitePixels = cv2.countNonZero(tempImage)
-        print 'box', box
+        ##print 'box', box
         if blackToWhiteRatioMin < ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
             #print "the good one: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
         else:
-            #print "the bad ones: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
-            pass
+            print 'box', box
+            print "the bad ones: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
+            ##cv2.imshow('temp Image',tempImage)
+            ##cv2.waitKey()
+            cv2.destroyAllWindows()
     return betterBoundingBoxes
 
 def filterTopHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, blackToWhiteRatioMax):
@@ -460,7 +467,7 @@ def filterByDistanceBetweenTargetsHighGoal(goodBoundingBoxes, xOffsetRatio, yOff
                 if secondX - width*xOffsetRatio < x <secondX + width*xOffsetRatio:
                     #print "It passed the first X test"
                 
-                    if (secondHeight - height*heightOffsetRatio < height < secondHeight + height*heightOffsetRatio:
+                    if (secondHeight - height*heightOffsetRatio < height < secondHeight + height*heightOffsetRatio):
                         #print "It passed the second X test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                     else:
@@ -496,18 +503,20 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffsetRatio, heightOffset
             #print 'len(secondBox): ', len(secondBox)
             #print 'len(goodBoundingBoxes): ',len(goodBoundingBoxes)
             secondX,secondY,secondWidth,secondHeight = secondBox
+            print 'width', width
             xDifference = width*ratio #Constant of proportionality of width of the 
             #retro Reflective to the width between the retro targets top left to top left
-            #print 'xDifference is:', xDifference
-            #print 'comparing: ', box, 'and', secondBox
-            if 0 < secondX - x < xDifference:
-                #print "passed X test"
+            print 'xDifference is:', xDifference
+            print 'comparing: ', box, 'and', secondBox
+            
+            if xDifference - width*2 < secondX - x < xDifference:
+                print "passed X test"
                 
                 if secondY - yOffsetRatio*secondHeight < y < secondY + yOffsetRatio*secondHeight :
-                    #print "passed Y test"
+                    print "passed Y test"
                     if (secondHeight-heightOffsetRatio*secondHeight < height < secondHeight + heightOffsetRatio*secondHeight or
                         height-heightOffsetRatio*height < secondHeight < height + heightOffsetRatio*height):
-                        #print "passed Height test"
+                        print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
                         
@@ -606,7 +615,7 @@ def getDistanceAwayLift(boundingBoxOfTarget):
     #print math.tan(offsetAddedElevationAngle)
     #print
     distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
-    print 'distanceAwayLift', distanceAwayLift
+    ##print 'distanceAwayLift', distanceAwayLift
     return distanceAwayLift
 
 def get0(vector):
@@ -631,8 +640,8 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(picture, bounding
         grayTempCorner3 = cv2.cvtColor(tempImageCorner3, cv2.COLOR_BGR2GRAY)
         grayTempCorner4 = cv2.cvtColor(tempImageCorner4, cv2.COLOR_BGR2GRAY)
             
-        #cv2.imshow('binary',correctColorImage)
-        #cv2.waitKey()
+        ###cv2.imshow('binary',correctColorImage)
+        ###cv2.waitKey()
         grayTempCorner1 = np.float32(grayTempCorner1)
         grayTempCorner2 = np.float32(grayTempCorner2)
         grayTempCorner3 = np.float32(grayTempCorner3)
@@ -692,7 +701,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(picture, bounding
         #print 'height', height
             
     #print 'objPoints', objPoints
-    print 'imgpoints', imgpoints
+    ##print 'imgpoints', imgpoints
     ret, targetRvec, targetTvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
     simpleVec = np.append(targetTvec[0],targetTvec[1])#np.array(targetTvec)#map(get0, targetTvec)
     simpleVec = np.append(simpleVec, targetTvec[2])
@@ -719,7 +728,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(picture, bounding
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget):
     oppositeAngle = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
     distanceAwayLift = getDistanceAwayLift(boundingBoxOfTarget)
-    print distanceAwayLift
+    ##print distanceAwayLift
     distanceToMoveLaterally = math.sin(oppositeAngle)*distanceAwayLift
     distanceToMoveForwardLift = math.cos(oppositeAngle)*distanceAwayLift
     return distanceToMoveLaterally, distanceToMoveForwardLift
@@ -728,10 +737,11 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
     if len(boundingBoxesOfTargets) == 1:
         boundingBoxOfTarget = boundingBoxesOfTargets[0]
         distanceToMoveLaterally, distanceToMoveForward = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
+        print "initial ", distanceToMoveLaterally
         if distanceToMoveLaterally < 0:
-            distanceToMoveLaterally = distanceToMoveLaterally + 3.135
+            distanceToMoveLaterally = distanceToMoveLaterally - 3.135
         else:
-            distanceToMoveLaterally = distanceToMoveLaterally - 5.135
+            distanceToMoveLaterally = distanceToMoveLaterally + 5.135
         distanceToMoveLaterally = distanceToMoveLaterally + m_rightOffsetOfGearPlacerFromCamera
         distanceToMoveForward = distanceToMoveForward + m_forwardOffsetOfGearPlacerFromCamera
         return distanceToMoveLaterally, distanceToMoveForward
@@ -819,7 +829,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
     return angleToTurn, gearPlacerDistanceToMoveForward, gearPlacerDistanceToMoveLaterally
 
 def initNetworkTables():
-    logging.basicConfig(level=logging.DEBUG)
+    #logging.basicConfig(level=logging.DEBUG)
     ip = "10.49.5.77"
     NetworkTables.initialize(server=ip)
     sd = NetworkTables.getTable("VisionProcessing")
@@ -856,6 +866,7 @@ def getDataFromNetworktables(networkTable):
    #     #Save all the images since 10 seconds ago
 def main():
     initializedCameraStream = cameraStreamInit()
+    print "2"
     sd = initNetworkTables()
     if m_typeOfCamera == 'Shooter':
         while True:
@@ -889,6 +900,7 @@ def main():
             else:
                 putDataOnNetworkTablesLift(sd,False,timestamp,0,0,0)
             
+
 
         #turnOffRet, timestampRet, timestamp = getDataFromNetworktables(sd)
         #if turnOffRet:
