@@ -12,11 +12,8 @@ import logging
 m_xResolution = 2656 
 m_yResolution = 1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.matrix([[  3.52181804e+03,   0.00000000e+00,   1.39113893e+03],
- [  0.00000000e+00,   3.52592213e+03,   6.30998486e+02],
- [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]])
-m_distCoeffs = np.matrix([[  1.56899882e-01,   5.70175327e-02,  -8.04196263e-03,   5.25709066e-04,
-   -1.64438857e+00]])
+m_cameraMatrix = np.load('/home/pi/Desktop/mtx.npy')
+m_distCoeffs = np.load('/home/pi/Desktop/dist.npy')
 print m_cameraMatrix
 print np.load('/home/pi/Desktop/mtx.npy')
 print m_distCoeffs
@@ -63,9 +60,9 @@ def getCameraStream(rawCapture):
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,55,250,10,60,255,65)
-    #cv2.imshow('Processed Image', correctColorImage)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    cv2.imshow('Processed Image', correctColorImage)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
@@ -151,8 +148,8 @@ def findLiftTarget(img):
                 filteredList = correctLengthToWidthRatioList
         print 'filteredList 1: ', filteredList
         drawBoundingBoxes(img, filteredList)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         filteredList = filterByOtherTargetLift(filteredList, 5, 100, 65)
         print 'filteredList 2: ', filteredList
         #print
@@ -394,10 +391,9 @@ def drawBoundingBoxes (image, goodBoundingBoxes):
     copy = image.copy()
     for box in goodBoundingBoxes:
         x,y,width,height = box
-        copy = cv2.rectangle(copy,(x,y),((x + width), (y + height)),(255,0,0), 100)
-    small = cv2.resize(copy, (0,0), fx = 0.2, fy = 0.2)
+        copy = cv2.rectangle(copy,(x,y),((x + width), (y + height)),(255,0,0), 1)
     
-    #cv2.imshow("Processed Image", small)
+    cv2.imshow("Processed Image", copy)
 
 #Found on stack overflow; question 7446126
 def getIntersectingPoint(line1, line2):
@@ -418,7 +414,7 @@ def getBetterCoordinateMatrix(matrix):
     return [x,y]
 
 pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
-yOffset = 38.5
+yOffset = 38.75
 print 'yOffset', yOffset
 objPoints = np.matrix([[-5.125,yOffset,15.75],[-3.125,yOffset,10.75],[-5.125,yOffset,10.75],[-3.125,yOffset,15.75],[3.125,yOffset,15.75],[5.125,yOffset,10.75],
                        [3.125,yOffset,10.75],[5.125,yOffset,15.75]]) #HARD CODE IN THESE VALUES
@@ -433,14 +429,16 @@ def calibrateCameraExtrensic():
         ret, targets = findLiftTarget(picture)
         print 'targets', targets
         for target in targets:
-            offset = 25
+            offset = 10
             x,y,width,height = target
             tempImage = picture[y - offset:y+height+offset, x-offset:x+width+offset]
             
             
             #print tempImage
-            correctColorImage = filterColors(tempImage,55,250,10,60,255,65)
-
+            correctColorImage = filterColors(tempImage,50,240,10,65,255,80)
+            cv2.imshow('correctColorImage', correctColorImage)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
             correctColorImage = cv2.GaussianBlur(correctColorImage, (5,5),0)
             #big = cv2.resize(np.uint8(grayTempImage*255.0/grayTempImage.max()), (0,0), fx = 1, fy = 1)
 
@@ -457,10 +455,11 @@ def calibrateCameraExtrensic():
             topLinePoints = []
             bottomLinePoints = []
             print 'len(contours[0])', len(contours[0])
+            print 'len(contours)', len(contours)
             for coordinate in contours[0]:
                 coordinateX, coordinateY = coordinate[0]
                 
-                if offset/2 < coordinateX < 1.5*offset and 1.5*offset < coordinateY < height + offset/2:
+                if offset/2 < coordinateX < 1.5*offset and 2*offset < coordinateY < height + offset/1.5:
                     leftLinePoints.append(coordinate)
 
                 elif offset/2 < coordinateY < 1.5*offset and offset/2 < coordinateX < width + 0.5*offset:
@@ -510,8 +509,15 @@ def calibrateCameraExtrensic():
             imgpoints.append(bottomRightCorner)
             imgpoints.append(bottomLeftCorner)
             imgpoints.append(topRightCorner)
+            print topLeftCorner
+            cv2.circle(picture, (int(topLeftCorner[0]), int(topLeftCorner[1])),3,(255,0,0), -1 )
+            cv2.circle(picture, (int(topRightCorner[0]), int(topRightCorner[1])),3,(255,0,0), -1 )
+            cv2.circle(picture, (int(bottomRightCorner[0]), int(bottomRightCorner[1])),3,(255,0,0), -1 )
+            cv2.circle(picture, (int(bottomLeftCorner[0]), int(bottomLeftCorner[1])),3,(255,0,0), -1 )
+            cv2.imshow('picture', picture)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
             
-
             
             #big = cv2.resize(grayTempCorner3/grayTempCorner3.max(), (0,0), fx = 10, fy = 10)
            
