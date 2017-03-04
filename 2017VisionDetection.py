@@ -11,7 +11,14 @@ import time
 import sys
 from networktables import NetworkTables
 import logging
+import collections
+import ctypes
 
+#Memory Variables
+m_shortTermMemory = collections.deque()
+m_secondsToSaveMemory = 15
+m_microsecondsToSaveMemory = m_secondsToSaveMemory*1000000
+m_libc = ctypes.CDLL("libc.so.6") 
 
 #interensic paramaters
 m_xResolution = 1024 #2656 
@@ -294,6 +301,8 @@ def findHighGoalTarget(img):
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctWidth, preparedImage,0,3)
     print 'len(correctBlack2WhiteRatioList)', len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
+    correctFilterByOtherTargetsList = filterByOtherTargetHighGoal(correctBlack2WhiteRatioList,2,20,2)
+    print 'correctFilterByOtherTargetsList', len(correctFilterByOtherTargetsList)
     #cv2.waitKey()
     #correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, preparedImage,1,4)
     #print len(correctTopHalfBlack2WhiteRatioList)
@@ -333,11 +342,9 @@ def findHighGoalTarget(img):
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
     #print
     #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
-    filteredList = correctSizeList#THIS NEEDS TO BE THE BOUNDING BOX OF THE UPPER PART OF THE HIGH GOAL
-    if len(filteredList) == 1:
-        return True, filteredList 
-    else:
-        return False, filteredList
+    filteredList = correctFilterByOtherTargetsList
+    return len(filteredList) == 1, filteredList
+    
 def prepareImage(image):
     #Cancels out very small bits of noice by blurring the image and then eroding it
     #erodedImage = cv2.erode(image,(3,3))
@@ -451,8 +458,11 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMi
     #        betterBoundingBoxes = betterBoundingBoxes + [box]
     #return betterBoundingBoxes
 
-def filterByDistanceBetweenTargetsHighGoal(goodBoundingBoxes, xOffsetRatio, yOffsetRatio, heightOffsetRatio):
+def filterByOtherTargetHighGoal(goodBoundingBoxes, yOffsetRatio, xOffsetDelta, heightOffsetRatio):
     #filterByDistanceBetweenTargetsHighGoal(0.5,2,)
+    if len(goodBoundingBoxes) == 1:
+        return goodBoundingBoxes
+    
     betterBoundingBoxes = []
     for box in goodBoundingBoxes:
         x,y,width,height = box
@@ -464,10 +474,10 @@ def filterByDistanceBetweenTargetsHighGoal(goodBoundingBoxes, xOffsetRatio, yOff
             
             if 0.8*yDifference < secondY - y < 1.2*yDifference :
                 #print "It passes the Y test"
-                if secondX - width*xOffsetRatio < x <secondX + width*xOffsetRatio:
+                if secondX - xOffsetDelta < x <secondX + height + xOffsetDelta:
                     #print "It passed the first X test"
                 
-                    if (secondHeight - height*heightOffsetRatio < height < secondHeight + height*heightOffsetRatio):
+                    if (0.8*heightOffsetRatio < height/secondHeight < 1.2*heightOffsetRatio):
                         #print "It passed the second X test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                     else:
@@ -583,7 +593,7 @@ def getRadiansToTurnHighGoalAndDistanceAwayShooter(boundingBoxOfTarget):
     distanceAwayFromHighGoal = getDistanceAwayHighGoal(boundingBoxOfTarget)
     oppositeSide = math.sin(radiansToTurnFromCamera)*distanceAwayFromHighGoal
     adjacentSide = math.cos(radiansToTurnFromCamera)*distanceAwayFromHighGoal
-    centerOfRobotAdjacent = adjacentSide + m_forwardOffsetOfHighGoalCamera
+    centerOfRobotAdjacent = adjacentSide + m_forwardOffsetOfCamera
     centerOfRobotOppositeSide = oppositeSide + m_lateralRightOffsetOfCamera
     centerOfRobotHypotenuse = math.sqrt(centerOfRobotAdjacent*centerOfRobotAdjacent + centerOfRobotOppositeSide*centerOfRobotOppositeSide)
     angleToTurnFromCenterOfRobot = math.atan(centerOfRobotOppositeSide/centerOfRobotAdjacent)
@@ -832,8 +842,9 @@ def initNetworkTables():
     #logging.basicConfig(level=logging.DEBUG)
     ip = "10.49.5.77"
     NetworkTables.initialize(server=ip)
-    sd = NetworkTables.getTable("VisionProcessing")
-    return sd
+    cameraNT = NetworkTables.getTable("VisionProcessing")
+    robotNT = NetworkTables.getTable("RobotCommands")
+    return cameraNT, robotNT
     
 def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
     networkTable.putBoolean('foundLiftTarget', booleanFoundTarget)
@@ -849,38 +860,62 @@ def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHi
     networkTable.putNumber('timestampHighGoal', timestampHighGoal)
 
 def getDataFromNetworktables(networkTable):
-    turnOffRet = networkTable.getBoolean('TurnOff', 0.0)
-    timestampRet = networkTable.getBoolean('TimestampRet', 0.0)
+    turnOnRet = networkTable.getBoolean('TurnOn', False)
+    timestampRet = networkTable.getBoolean('TimestampRet', False)
     timestamp = networkTable.getBoolean('Timestamp', 0.0)
-    if turnOffRet:
-        return turnOffRet, None, None
+    if turnOnRet:
+        return turnOnRet, None, None
     elif timestampRet:
         return False,timestampRet,timestamp
     else:
         return False, False, 0
 
-#def saveTimeStamp(extractingTimeStamp, timestamp):
- #   if extractingTimeStamp:
-     #   cv2.imwrite("Image%" % timestamp, timestamp)
-  #  else:
-   #     #Save all the images since 10 seconds ago
+def setShortTermMemory(newTimestamp, image):
+    m_shortTermMemory.append((newTimestamp, image))
+    while newTimestamp - m_shortTermMemory[0][0] > m_microsecondsToSaveMemory:
+        m_shortTermMemory.popleft()
+    
+def saveImage(timestamp):
+    while timestamp - m_shortTermMemory[0][0] > 0:
+        m_shortTermMemory.popleft()
+    
+    if m_shortTermMemory[0][0] == timestamp:
+        cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/Image%d" % timestamp, m_shortTermMemory[0][1])
+        m_shortTermMemory.popleft()
+        return
+
+    cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/OldestImage%d" % timestamp, m_shortTermMemory[0][1])
+        
+def dispatchCommands(timestamp, cameraStream, networkTable):
+    setShortTermMemory(timestamp, cameraStream)
+    turnOnRet, timestampRet, timestamp = getDataFromNetworktables(networkTable)
+    if not turnOnRet:
+        m_libc.sync()
+    elif timestampRet:
+        saveImage(timestamp)
+   
 def main():
     initializedCameraStream = cameraStreamInit()
     print "2"
-    sd = initNetworkTables()
+    sd, robotNT = initNetworkTables()
     if m_typeOfCamera == 'Shooter':
         while True:
             timestamp,cameraStream = getCameraStream(initializedCameraStream)
+            setShortTermMemory(timestamp, cameraStream)
+            print 'timestamp', timestamp
             retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
             if retHighGoal:
                 radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
                 putDataOnNetworkTablesHighGoal(sd,True,timestamp,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
             else:
                 putDataOnNetworkTablesHighGoal(sd,False,timestamp,0,0)
-
+            dispatchCommands(timestamp, cameraStream, robotNT)
+            
     else:
         while True:
             timestamp,cameraStream = getCameraStream(initializedCameraStream)
+            setShortTermMemory(timestamp, cameraStream)
+            print 'timestamp', timestamp
             retLift,liftTargets = findLiftTarget(cameraStream)
             if retLift:
                 #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(cameraStream, liftTargets)
@@ -899,14 +934,10 @@ def main():
             
             else:
                 putDataOnNetworkTablesLift(sd,False,timestamp,0,0,0)
-            
 
+            dispatchCommands(timestamp, cameraStream, robotNT)
 
-        #turnOffRet, timestampRet, timestamp = getDataFromNetworktables(sd)
-        #if turnOffRet:
-         #   break
-        #elif timestampRet:
-         #   saveTimeStamp(timestamp)
+    
         
 main()
 
