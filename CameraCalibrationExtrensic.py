@@ -429,8 +429,9 @@ def calibrateCameraExtrensic():
         ret, targets = findLiftTarget(picture)
         print 'targets', targets
         for target in targets:
-            offset = 10
             x,y,width,height = target
+            offset = height*0.21212121
+            print 'height', height
             tempImage = picture[y - offset:y+height+offset, x-offset:x+width+offset]
             
             
@@ -459,19 +460,20 @@ def calibrateCameraExtrensic():
             for coordinate in contours[0]:
                 coordinateX, coordinateY = coordinate[0]
                 
-                if offset/2 < coordinateX < 1.5*offset and 2*offset < coordinateY < height + offset/1.5:
+                if offset/2 < coordinateX < 1.5*offset and 1.5*offset < coordinateY < height + offset/2:
                     leftLinePoints.append(coordinate)
 
-                elif offset/2 < coordinateY < 1.5*offset and offset/2 < coordinateX < width + 0.5*offset:
+                elif offset/2 < coordinateY < 1.5*offset and 1.5 * offset < coordinateX < width + 0.5*offset:
                     topLinePoints.append(coordinate)
 
-                elif width + 0.5*offset< coordinateX < width + 1.5*offset and offset < coordinateY < height + 0.5*offset:
+                elif width + 0.5*offset< coordinateX < width + 1.5*offset and 1.5*offset < coordinateY < height + 0.5*offset:
                     rightLinePoints.append(coordinate)
 
-                elif height + 0.5*offset < coordinateY < height + 1.5*offset and offset*0.5 < coordinateX < width + offset*1.5:
+                elif height + 0.5*offset < coordinateY < height + 1.5*offset and offset*1.5 < coordinateX < width + offset*0.5:
                     bottomLinePoints.append(coordinate)
 
-            print 'len(leftLinePoints)', len(leftLinePoints)
+            print 'len(bottomLinePoints)', len(bottomLinePoints)
+            print 'len(rightLinePoints)', len(rightLinePoints)
             
             print 'height', height
                     
@@ -490,6 +492,12 @@ def calibrateCameraExtrensic():
             bottomRightCorner = getIntersectingPoint(bottomLine, rightLine)
             bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine) 
 
+            print 'topLeftCorner', topLeftCorner
+            print 'topRightCorner', topRightCorner
+            print 'bottomRightCorner', bottomRightCorner
+            print 'bottomLeftCorner', bottomLeftCorner
+
+            
             topLeftCorner = getBetterCoordinateMatrix(topLeftCorner)
             topRightCorner = getBetterCoordinateMatrix(topRightCorner)
             bottomRightCorner = getBetterCoordinateMatrix(bottomRightCorner)

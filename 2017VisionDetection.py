@@ -839,12 +839,11 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
     return angleToTurn, gearPlacerDistanceToMoveForward, gearPlacerDistanceToMoveLaterally
 
 def initNetworkTables():
-    #logging.basicConfig(level=logging.DEBUG)
-    ip = "10.49.5.77"
+    logging.basicConfig(level=logging.DEBUG)
+    ip = "localhost" #"10.49.5.77"
     NetworkTables.initialize(server=ip)
     cameraNT = NetworkTables.getTable("VisionProcessing")
-    robotNT = NetworkTables.getTable("RobotCommands")
-    return cameraNT, robotNT
+    return cameraNT
     
 def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
     networkTable.putBoolean('foundLiftTarget', booleanFoundTarget)
@@ -860,9 +859,11 @@ def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHi
     networkTable.putNumber('timestampHighGoal', timestampHighGoal)
 
 def getDataFromNetworktables(networkTable):
-    turnOnRet = networkTable.getBoolean('TurnOn', False)
+    
+    turnOnRet = networkTable.getBoolean("RobotEnabled", True)
+    print "WE MADE IT!", turnOnRet
     timestampRet = networkTable.getBoolean('TimestampRet', False)
-    timestamp = networkTable.getBoolean('Timestamp', 0.0)
+    timestamp = networkTable.getNumber('Timestamp', 0.0)
     if turnOnRet:
         print '1'
         return turnOnRet, None, None
@@ -895,8 +896,9 @@ def dispatchCommands(timestamp, cameraStream, networkTable):
     setShortTermMemory(timestamp, cameraStream)
     turnOnRet, timestampRet, timestamp = getDataFromNetworktables(networkTable)
     if not turnOnRet:
-        print "whoops"
         m_libc.sync()
+    elif turnOnRet:
+        print "not whoops"
     elif timestampRet:
         print 'YAY'
         saveImage(timestamp, networkTable)
@@ -904,7 +906,7 @@ def dispatchCommands(timestamp, cameraStream, networkTable):
 def main():
     initializedCameraStream = cameraStreamInit()
     #print "2"
-    sd, robotNT = initNetworkTables()
+    sd = initNetworkTables()
     if m_typeOfCamera == 'Shooter':
         while True:
             
@@ -917,7 +919,7 @@ def main():
                 putDataOnNetworkTablesHighGoal(sd,True,timestamp,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
             else:
                 putDataOnNetworkTablesHighGoal(sd,False,timestamp,0,0)
-            dispatchCommands(timestamp, cameraStream, robotNT)
+            dispatchCommands(timestamp, cameraStream, sd)
             
     else:
         while True:
@@ -944,9 +946,7 @@ def main():
             else:
                 putDataOnNetworkTablesLift(sd,False,timestamp,0,0,0)
 
-            dispatchCommands(timestamp, cameraStream, robotNT)
-
-    
+            dispatchCommands(timestamp, cameraStream, sd)    
         
 main()
 
