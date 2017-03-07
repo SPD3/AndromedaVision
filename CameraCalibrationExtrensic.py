@@ -413,8 +413,8 @@ def getBetterCoordinateMatrix(matrix):
     y = matrix[1][0]
     return [x,y]
 
-pictures = "/home/pi/Pictures/ExtrensicCameraCalibrationPictures"
-yOffset = 38.75
+pictures = "/home/pi/test/AndromedaVision/FailedImageProcessingImages"
+yOffset = 0 #22 + 16.5
 print 'yOffset', yOffset
 objPoints = np.matrix([[-5.125,yOffset,15.75],[-3.125,yOffset,10.75],[-5.125,yOffset,10.75],[-3.125,yOffset,15.75],[3.125,yOffset,15.75],[5.125,yOffset,10.75],
                        [3.125,yOffset,10.75],[5.125,yOffset,15.75]]) #HARD CODE IN THESE VALUES
@@ -457,7 +457,14 @@ def calibrateCameraExtrensic():
             bottomLinePoints = []
             print 'len(contours[0])', len(contours[0])
             print 'len(contours)', len(contours)
-            for coordinate in contours[0]:
+            
+            maxlength = -1
+            for contour in contours:
+                lengthOfContour = len(contour)
+                if lengthOfContour > maxlength:
+                    maxlength = lengthOfContour
+                    maxLengthContour = contour
+            for coordinate in maxLengthContour:
                 coordinateX, coordinateY = coordinate[0]
                 
                 if offset/2 < coordinateX < 1.5*offset and 1.5*offset < coordinateY < height + offset/2:
@@ -599,6 +606,6 @@ if isRotationMatrix(R):
     
 inverseR = np.linalg.inv(R)
 print 'real Tvec: ', -(inverseR.dot(tvec))
-np.save(('/home/pi/Desktop/R.npy'), R)
-np.save(('/home/pi/Desktop/tvec.npy'), tvec)
+#np.save(('/home/pi/Desktop/R.npy'), R)
+#np.save(('/home/pi/Desktop/tvec.npy'), tvec)
 

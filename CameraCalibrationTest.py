@@ -32,7 +32,7 @@ for imgFileName in os.listdir(images):
     if ret == True:
         objpoints.append(objp)
         corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
-        print 'corners2', corners2
+        #print 'corners2', corners2
         imgpoints.append(corners2)
 
         # Draw and display the corners
