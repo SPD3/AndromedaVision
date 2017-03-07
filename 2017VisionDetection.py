@@ -840,8 +840,9 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTar
 
 def initNetworkTables():
     logging.basicConfig(level=logging.DEBUG)
-    ip = "localhost" #"10.49.5.77"
+    ip = "roborio-4905-frc.local" #"10.49.5.77"
     NetworkTables.initialize(server=ip)
+    #NetworkTables.setIPAddress("192.168.7.71")
     cameraNT = NetworkTables.getTable("VisionProcessing")
     return cameraNT
     
@@ -860,19 +861,12 @@ def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHi
 
 def getDataFromNetworktables(networkTable):
     
-    turnOnRet = networkTable.getBoolean("RobotEnabled", True)
-    print "WE MADE IT!", turnOnRet
-    timestampRet = networkTable.getBoolean('TimestampRet', False)
+    turnOnRet = networkTable.getBoolean("RobotEnabled", False)
+    
+    timestampRet = networkTable.getBoolean("TimestampRet", False)
+    print "timestampRet: ", timestampRet
     timestamp = networkTable.getNumber('Timestamp', 0.0)
-    if turnOnRet:
-        print '1'
-        return turnOnRet, None, None
-    elif timestampRet:
-        return False,timestampRet,timestamp
-        print '2'
-    else:
-        return False, False, 0
-        print '3'
+    return turnOnRet, timestampRet, timestamp
 
 def setShortTermMemory(newTimestamp, image):
     m_shortTermMemory.append((newTimestamp, image))
@@ -884,9 +878,9 @@ def saveImage(timestamp, networkTable):
         m_shortTermMemory.popleft()
     
     if m_shortTermMemory[0][0] == timestamp:
-        cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/Image%d" % timestamp, m_shortTermMemory[0][1])
+        cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/Image%d.png" % timestamp, m_shortTermMemory[0][1])
         m_shortTermMemory.popleft()
-        print "WE MADE IT"
+        print "Save Image: ", timestamp
         return
 
     cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/OldestImage%d" % timestamp, m_shortTermMemory[0][1])
@@ -897,10 +891,7 @@ def dispatchCommands(timestamp, cameraStream, networkTable):
     turnOnRet, timestampRet, timestamp = getDataFromNetworktables(networkTable)
     if not turnOnRet:
         m_libc.sync()
-    elif turnOnRet:
-        print "not whoops"
     elif timestampRet:
-        print 'YAY'
         saveImage(timestamp, networkTable)
    
 def main():
