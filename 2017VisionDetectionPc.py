@@ -61,14 +61,14 @@ def null(x):
     pass
 
 def setupImageWindow():
-    cv2.namedWindow("Original Image")
+    #cv2.namedWindow("Original Image")
     cv2.namedWindow("Processed Image")
-    cv2.createTrackbar('minHeight', 'Processed Image',0,512,null)
-    cv2.createTrackbar('maxHeight', 'Processed Image',0,512,null)
-    cv2.createTrackbar('minWidth', 'Processed Image',0,512,null)
-    cv2.createTrackbar('maxWidth', 'Processed Image',0,512,null)
-    #cv2.createTrackbar('maxS', 'Processed Image',0,255,null)
-    #cv2.createTrackbar('maxV', 'Processed Image',0,255,null)
+    cv2.createTrackbar('minH', 'Processed Image',0,255,null)
+    cv2.createTrackbar('minS', 'Processed Image',0,255,null)
+    cv2.createTrackbar('minV', 'Processed Image',0,255,null)
+    cv2.createTrackbar('maxH', 'Processed Image',0,255,null)
+    cv2.createTrackbar('maxS', 'Processed Image',0,255,null)
+    cv2.createTrackbar('maxV', 'Processed Image',0,255,null)
   
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
@@ -164,32 +164,7 @@ def findHighGoalTarget(img):
     correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,0,10)
     print len(correctLeftHalfBlack2WhiteRatioList)
 #    drawBoundingBoxes(img, correctLeftHalfBlack2WhiteRatioList)
-    #while True:
-     #   minRatio = cv2.getTrackbarPos('minRatio','Processed Image')
-      #  maxRatio = cv2.getTrackbarPos('maxRatio','Processed Image')
-        #minV = cv2.getTrackbarPos('minV','Processed Image')
-        #maxH = cv2.getTrackbarPos('maxH','Processed Image')
-        #maxS = cv2.getTrackbarPos('maxS','Processed Image')
-        #maxV = cv2.getTrackbarPos('maxV','Processed Image')
-        
-       # correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,minRatio,maxRatio)
-        #drawBoundingBoxes(preparedImage, correctLeftHalfBlack2WhiteRatioList)
-        
-        
-        #key = cv2.waitKey(0)
-#        if key == ord('q'): # quit
- #           return None
-  #      elif key == ord('g'): # good
-   #         break
-        # Try again on any other key
-    #print
-#    print minRatio
- #   print maxRatio
-  #  print 
-   # print 
-    #print 
-#    print 
- #   print
+    
     #correctDistanceBetweenTargets = filterByDistanceBetweenTargets(correctBlack2WhiteRatioList)
     #print len(correctDistanceBetweenTargets)
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
@@ -491,7 +466,34 @@ def test(liftTargets, highGoalTarget):
         else:
             putDataOnNetworkTablesHighGoal(sd,timestamp,1000,1000)
         
-main()
+image = cv2.imread("C:\\Users\\admin\\Image235249027.png")
 
+setupImageWindow()
+while True:
+    minH = cv2.getTrackbarPos('minH','Processed Image')
+    minS = cv2.getTrackbarPos('minS','Processed Image')
+    minV = cv2.getTrackbarPos('minV','Processed Image')
+    maxH = cv2.getTrackbarPos('maxH','Processed Image')
+    maxS = cv2.getTrackbarPos('maxS','Processed Image')
+    maxV = cv2.getTrackbarPos('maxV','Processed Image')
+        
+    correctLeftHalfBlack2WhiteRatioList = filterColors(image, minH, minS,minV,maxH, maxS, maxV)
+    cv2.imshow('Processed Image', correctLeftHalfBlack2WhiteRatioList)
+        
+        
+    key = cv2.waitKey(0)
+    if key == ord('q'): # quit
+        break
+    elif key == ord('g'): # good
+        break
+    #Try again on any other key
+    print
+    print minH
+    print minS
+    print minV
+    print maxH
+    print maxS
+    print maxV
+    print
 
-    
+cv2.destroyAllWindows()
