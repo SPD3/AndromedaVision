@@ -14,6 +14,12 @@ import logging
 import collections
 import ctypes
 
+with open('/home/pi/Desktop/NameOfRaspberryPi') as f:
+    m_nameOfRaspberryPi = f.read()
+    
+with open('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/CameraType") as f:
+    m_typeOfCamera = f.read()
+
 #Memory Variables
 m_shortTermMemory = collections.deque()
 m_secondsToSaveMemory = 15
@@ -24,8 +30,10 @@ m_libc = ctypes.CDLL("libc.so.6")
 m_xResolution = 1024 #2656 
 m_yResolution = 768 #1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.load('/home/pi/Desktop/mtx.npy')
-m_distCoeffs = np.load('/home/pi/Desktop/dist.npy')
+m_cameraMatrix = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/mtx.npy")
+m_distCoeffs = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/dist.npy")
+print 'm_cameraMatrix', m_cameraMatrix
+print 'm_distCoeffs', m_distCoeffs
 #print m_cameraMatrix
 #print np.load('/home/pi/Desktop/mtx.npy')
 #print m_distCoeffs
@@ -62,9 +70,7 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
 #print m_centerXOfImage, "and", m_centerYOfImage
 #print m_xResolution, "by", m_yResolution
 
-with open('/home/pi/Desktop/CameraType') as f:
-    m_typeOfCamera = f.read()
-
+print 'm_typeOfCamera', m_typeOfCamera
 m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
 #Found at learnopencv.com
@@ -91,8 +97,10 @@ def rotationMatrixToEulerAngles(R):
         z = 0
     return np.array([x,y,z])
 
-m_RCamera = np.load('/home/pi/Desktop/R.npy')
-m_tvecCamera = np.load('/home/pi/Desktop/tvec.npy')
+m_RCamera = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/R.npy")
+m_tvecCamera = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/tvec.npy")
+print 'm_RCamera', m_RCamera
+print 'm_tvecCamera', m_tvecCamera
 m_eulerAngles = rotationMatrixToEulerAngles(m_RCamera)
 m_radiansAngleofCamera = math.pi/2 - m_eulerAngles[0]#(m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
 inverseR = np.linalg.inv(m_RCamera)

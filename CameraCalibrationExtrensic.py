@@ -9,15 +9,15 @@ import sys
 from networktables import NetworkTables
 import logging
 
+with open('/home/pi/Desktop/NameOfRaspberryPi') as f:
+    m_nameOfRaspberryPi = f.read()
+    
 m_xResolution = 2656 
 m_yResolution = 1328
 m_cameraCalibrationData = np.load('/home/pi/test/AndromedaVision/CameraCalibrationData.npz')
-m_cameraMatrix = np.load('/home/pi/Desktop/mtx.npy')
-m_distCoeffs = np.load('/home/pi/Desktop/dist.npy')
-print m_cameraMatrix
-print np.load('/home/pi/Desktop/mtx.npy')
-print m_distCoeffs
-print np.load('/home/pi/Desktop/dist.npy')
+m_cameraMatrix = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/mtx.npy')
+m_distCoeffs = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/dist.npy')
+
 #field parameters
 m_heightOfHighGoalTarget = 10.0 #Need to get actual number from manual
 m_heightOfLiftTarget = 15.75 #Actual Number From manual
@@ -599,6 +599,7 @@ if isRotationMatrix(R):
     
 inverseR = np.linalg.inv(R)
 print 'real Tvec: ', -(inverseR.dot(tvec))
-np.save(('/home/pi/Desktop/R.npy'), R)
-np.save(('/home/pi/Desktop/tvec.npy'), tvec)
+
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/R.npy'), R)
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/tvec.npy'), tvec)
 

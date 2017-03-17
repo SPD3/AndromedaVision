@@ -32,7 +32,7 @@ for imgFileName in os.listdir(images):
     if ret == True:
         objpoints.append(objp)
         corners2 = cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
-        print 'corners2', corners2
+        #print 'corners2', corners2
         imgpoints.append(corners2)
 
         # Draw and display the corners
@@ -57,7 +57,10 @@ for i in xrange(len(objpoints)):
     meanError += error
 print "Total Error: ", meanError/len(objpoints)
 
-np.save(('/home/pi/Desktop/mtx.npy'), mtx)
-np.save(('/home/pi/Desktop/dist.npy'), dist)
+with open('/home/pi/Desktop/NameOfRaspberryPi') as f:
+    m_nameOfRaspberryPi = f.read()
+    
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/mtx.npy'), mtx)
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/dist.npy'), dist)
 
 
