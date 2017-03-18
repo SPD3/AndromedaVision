@@ -460,16 +460,16 @@ def calibrateCameraExtrensic():
             for coordinate in contours[0]:
                 coordinateX, coordinateY = coordinate[0]
                 
-                if offset/2 < coordinateX < 1.5*offset and 1.5*offset < coordinateY < height + offset/2:
+                if offset/2 < coordinateX < offset + width*0.5 and offset + height*0.25 < coordinateY < height*0.75 + offset:
                     leftLinePoints.append(coordinate)
 
-                elif offset/2 < coordinateY < 1.5*offset and 1.5 * offset < coordinateX < width + 0.5*offset:
+                elif offset/2 < coordinateY < offset + height*0.5 and offset + width*0.25 < coordinateX < width*0.75 + offset:
                     topLinePoints.append(coordinate)
 
-                elif width + 0.5*offset< coordinateX < width + 1.5*offset and 1.5*offset < coordinateY < height + 0.5*offset:
+                elif width*0.5 + offset< coordinateX < width + 1.5*offset and offset + height*0.25 < coordinateY < height*0.75 + offset:
                     rightLinePoints.append(coordinate)
 
-                elif height + 0.5*offset < coordinateY < height + 1.5*offset and offset*1.5 < coordinateX < width + offset*0.5:
+                elif height*0.5 + offset < coordinateY < height + 1.5*offset and offset + width*0.25 < coordinateX < width*0.75 + offset:
                     bottomLinePoints.append(coordinate)
 
             print 'len(bottomLinePoints)', len(bottomLinePoints)

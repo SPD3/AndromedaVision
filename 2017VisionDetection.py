@@ -140,10 +140,13 @@ def cameraStreamInit():
     # allow the camera to warmup
     time.sleep(2)
     return rawCapture
-    
-def getCameraStream(rawCapture):
+
+def getRobotTimeStamp(networkTable):
+    return networkTable.getNumber("RobotTimestamp", 0.0)
+
+def getCameraStream(rawCapture, networkTable):
     for frame in m_camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-        timestamp = m_camera.timestamp
+        timestamp = getRobotTimeStamp(networkTable)
         image = frame.array
         rawCapture.truncate(0)
         h,w = image.shape[:2]
@@ -907,6 +910,9 @@ def getDataFromNetworktables(networkTable):
     timestamp = networkTable.getNumber('Timestamp', 0.0)
     return turnOnRet, timestampRet, timestamp
 
+def getRobotParallelStatus(networkTable):
+    return networkTable.getBoolean("ParallelStatus", False)
+
 def setShortTermMemory(newTimestamp, image):
     m_shortTermMemory.append((newTimestamp, image))
     while newTimestamp - m_shortTermMemory[0][0] > m_microsecondsToSaveMemory:
@@ -941,7 +947,7 @@ def main():
     if m_typeOfCamera == 'Shooter':
         while True:
             
-            timestamp,cameraStream = getCameraStream(initializedCameraStream)
+            timestamp,cameraStream = getCameraStream(initializedCameraStream, sd)
             setShortTermMemory(timestamp, cameraStream)
             #print 'timestamp', timestamp
             retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
@@ -954,12 +960,13 @@ def main():
             
     else:
         while True:
-            
-            timestamp,cameraStream = getCameraStream(initializedCameraStream)
+            initialrobotParallelStatus = getRobotParallelStatus(sd)
+            timestamp,cameraStream = getCameraStream(initializedCameraStream, sd)
+            afterPicRobotParallelStatus = getRobotParallelStatus(sd)
             setShortTermMemory(timestamp, cameraStream)
             #print 'timestamp', timestamp
             retLift,liftTargets = findLiftTarget(cameraStream)
-            if retLift:
+            if retLift and initialrobotParallelStatus and afterPicRobotParallelStatus:
                 #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(cameraStream, liftTargets)
 
                 #print 'robotTvecAfterTurning', robotTvecAfterTurning
