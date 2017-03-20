@@ -57,7 +57,10 @@ for i in xrange(len(objpoints)):
     meanError += error
 print "Total Error: ", meanError/len(objpoints)
 
-np.save(('/home/pi/Desktop/mtx.npy'), mtx)
-np.save(('/home/pi/Desktop/dist.npy'), dist)
+with open('/home/pi/Desktop/NameOfRaspberryPi') as f:
+    m_nameOfRaspberryPi = f.read()
+    
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/mtx.npy'), mtx)
+np.save(('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + '/dist.npy'), dist)
 
 
