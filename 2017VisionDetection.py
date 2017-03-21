@@ -155,7 +155,8 @@ def getRobotTimeStamp(networkTable):
 
 def getCameraStream(rawCapture, networkTable):
     for frame in m_camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-        timestamp = getRobotTimeStamp(networkTable)
+        timestamp1 = getRobotTimeStamp(networkTable)
+        timestamp2 = m_camera.timestamp
         image = frame.array
         rawCapture.truncate(0)
         h,w = image.shape[:2]
@@ -168,7 +169,7 @@ def getCameraStream(rawCapture, networkTable):
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
-        return timestamp,undistortedImage
+        return timestamp1,undistortedImage, timestamp2
     
 def null(x):
     pass
@@ -950,7 +951,7 @@ def getDataFromNetworktables(networkTable):
     return turnOnRet, timestampRet, timestamp
 
 def getRobotParallelStatus(networkTable):
-    return networkTable.getBoolean("ParallelStatus", False)
+    return networkTable.getBoolean("ParallelStatus", True)#This is true because this networktable is not created on the java side of some branches so we need this to be true so that those branches of code still work
 
 def setShortTermMemory(newTimestamp, image):
     m_shortTermMemory.append((newTimestamp, image))
@@ -1003,9 +1004,9 @@ def main():
         while True:
 
             initialrobotParallelStatus = getRobotParallelStatus(sd)
-            timestamp,cameraStream = getCameraStream(initializedCameraStream, sd)
+            timestamp,cameraStream, timestampForPi = getCameraStream(initializedCameraStream, sd)
             afterPicRobotParallelStatus = getRobotParallelStatus(sd)
-            setShortTermMemory(timestamp, cameraStream)
+            setShortTermMemory(timestampForPi, cameraStream)
             #print 'timestamp', timestamp
             retLift,liftTargets = findLiftTarget(cameraStream)
             if retLift and initialrobotParallelStatus and afterPicRobotParallelStatus:
@@ -1030,7 +1031,7 @@ def main():
 
             dispatchCommands(timestamp, cameraStream, sd)    
             
-#main()
+main()
 
 #TURN OFF THE PI !!!!!!!!!!!!!!!!!!!!!!
 
