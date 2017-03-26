@@ -1,0 +1,9 @@
+startedfilename="Started"
+currentDate=`date +"%m%d%Y-%H%M%S"`
+fileName="/home/pi/${startedfilename}-${currentDate}.log"
+echo "starting up" > $fileName
+date >> $fileName
+
+sleep 10
+/usr/bin/python /home/pi/test/AndromedaVision/2017VisionDetection.py >> $fileName 2>&1 &
+echo "pid" $! >> $fileName
