@@ -155,7 +155,7 @@ def getRobotTimeStamp(networkTable):
 
 def getCameraStream(rawCapture, networkTable):
     for frame in m_camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-        timestamp1 = getRobotTimeStamp(networkTable)
+        robotTimestamp = getRobotTimeStamp(networkTable)
         timestamp2 = m_camera.timestamp
         image = frame.array
         rawCapture.truncate(0)
@@ -169,7 +169,7 @@ def getCameraStream(rawCapture, networkTable):
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
         ##cv2.waitkey(0)
         #cv2.destroyAllWindows()
-        return timestamp1,undistortedImage, timestamp2
+        return robotTimestamp,undistortedImage, timestamp2
     
 def null(x):
     pass
@@ -831,25 +831,28 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
     if (firstX + secondX + secondWidth)/2 < m_centerXOfImage:
         if firstX > secondX:
             correctTarget = firstBoundingBox
-            leftTarget = False
+            incorrectTarget = secondBoundingBox
+
         else:
             correctTarget = secondBoundingBox
-            leftTarget = False
+            incorrectTarget = firstBoundingBox
+ 
         
     else:
         if firstX > secondX:
             correctTarget = secondBoundingBox
-            leftTarget = True
+            incorrectTarget = firstBoundingBox
+
         else:
             correctTarget = firstBoundingBox
-            leftTarget = True
+            incorrectTarget = secondBoundingBox
 
-    if correctTarget[0] < m_centerXOfImage:
-        targetOnLeft = True
+    if correctTarget[0] > incorrectTarget[0]:
+        leftTarget = False
+
     else:
-        targetOnLeft = False
-    print "correctTarget", correctTarget
-    print "targetOnLeft", targetOnLeft
+        leftTarget = True
+        
     distanceToMoveLaterally,distanceToMoveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(correctTarget)
     if leftTarget:
         distanceToMoveLaterally = distanceToMoveLaterally + 5.125
@@ -941,18 +944,20 @@ def initNetworkTables():
     cameraNT = NetworkTables.getTable("VisionProcessing")
     return cameraNT
     
-def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
+def putDataOnNetworkTablesLift(networkTable, booleanFoundTarget, timestampLift,robotTimestampLift,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift):
     networkTable.putBoolean('foundLiftTarget', booleanFoundTarget)
     networkTable.putNumber('radiansToTurnLift', radiansToTurnLift)
     networkTable.putNumber('distanceToDriveLaterallyLift', distanceToMoveLaterallyLift)
     networkTable.putNumber('distanceToDriveForwardLift', distanceToDriveForwardLift)
     networkTable.putNumber('timestampLift', timestampLift)
+    networkTable.putNumber("robotTimestampLift", robotTimestampLift)
     
-def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHighGoal,radiansToTurnHighGoal,distanceAwayHighGoal):
+def putDataOnNetworkTablesHighGoal(networkTable, booleanFoundTarget, timestampHighGoal,robotTimestampHighGoal,radiansToTurnHighGoal,distanceAwayHighGoal):
     networkTable.putBoolean('foundHighGoalTarget', booleanFoundTarget)
     networkTable.putNumber('radiansToTurnHighGoal', radiansToTurnHighGoal)
     networkTable.putNumber('distanceAwayHighGoal', distanceAwayHighGoal)
     networkTable.putNumber('timestampHighGoal', timestampHighGoal)
+    networkTable.putNumber('robotTimestampHighGoal', robotTimestampHighGoal)
 
 def getDataFromNetworktables(networkTable):
     
@@ -1005,17 +1010,17 @@ def main():
     if m_typeOfCamera == 'Shooter':
         while True:
             
-            timestamp,cameraStream = getCameraStream(initializedCameraStream, sd)
+            timestamp,cameraStream, timestampForPi = getCameraStream(initializedCameraStream, sd)
             setShortTermMemory(timestamp, cameraStream)
 
             ##print 'timestamp', timestamp
             retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
             if retHighGoal:
                 radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
-                putDataOnNetworkTablesHighGoal(sd,True,timestamp,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
+                putDataOnNetworkTablesHighGoal(sd,True,timestampForPi,radiansToTurnHighGoalFromShooter,distanceAwayHighGoalFromShooter)
             else:
-                putDataOnNetworkTablesHighGoal(sd,False,timestamp,0,0)
-            dispatchCommands(timestamp, cameraStream, sd)
+                putDataOnNetworkTablesHighGoal(sd,False,timestampForPi,0,0)
+            dispatchCommands(timestampForPi, cameraStream, sd)
             
     else:
         while True:
