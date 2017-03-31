@@ -1,5 +1,5 @@
 #import pkg_resources
-###print pkg_resources.get_distribution('picamera').version
+#print pkg_resources.get_distribution('picamera').version
 
 import cv2
 import numpy as np
@@ -35,10 +35,10 @@ m_cameraMatrix = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi 
 m_distCoeffs = np.load('/home/pi/test/AndromedaVision/' + m_nameOfRaspberryPi + "/dist.npy")
 #print 'm_cameraMatrix', m_cameraMatrix
 #print 'm_distCoeffs', m_distCoeffs
-##print m_cameraMatrix
-##print np.load('/home/pi/Desktop/mtx.npy')
-##print m_distCoeffs
-##print np.load('/home/pi/Desktop/dist.npy')
+#print m_cameraMatrix
+#print np.load('/home/pi/Desktop/mtx.npy')
+#print m_distCoeffs
+#print np.load('/home/pi/Desktop/dist.npy')
 
 
 
@@ -61,7 +61,7 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
                        [3.125,0.0,10.75],[5.125,0.0,15.75]]) #HARD CODE IN THESE VALUES
 
 #m_degreesAngleOfCamera = 18 #16.65 #+ (0.0400313438911 *(180/math.pi))#actual number from Robot
-###print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
+#print 'm_degreesAngleOfCamera ', m_degreesAngleOfCamera
 
 
 
@@ -69,8 +69,8 @@ objPoints = np.matrix([[-5.125,0.0,15.75],[-3.125,0.0,10.75],[-5.125,0.0,10.75],
 #m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
 
 
-###print m_centerXOfImage, "and", m_centerYOfImage
-###print m_xResolution, "by", m_yResolution
+#print m_centerXOfImage, "and", m_centerYOfImage
+#print m_xResolution, "by", m_yResolution
 
 #print 'm_typeOfCamera', m_typeOfCamera
 m_camera = picamera.PiCamera(resolution = (m_xResolution, m_yResolution))
@@ -107,14 +107,14 @@ m_eulerAngles = rotationMatrixToEulerAngles(m_RCamera)
 m_radiansAngleofCamera = math.pi/2 - m_eulerAngles[0]#(m_degreesAngleOfCamera * (math.pi/180))# - 0.0400313438911
 inverseR = np.linalg.inv(m_RCamera)
 m_eulerAngles = rotationMatrixToEulerAngles(inverseR)
-###print "m_eulerAngles", m_eulerAngles
+#print "m_eulerAngles", m_eulerAngles
 
 m_robotTvec = -(inverseR.dot(m_tvecCamera))
 m_heightOfCamera = m_robotTvec[2]
 
-##print 'real Tvec: ', m_robotTvec
-##print 'm_heightOfCamera', m_heightOfCamera
-##print 'm_radiansAngleofCamera', m_radiansAngleofCamera
+#print 'real Tvec: ', m_robotTvec
+#print 'm_heightOfCamera', m_heightOfCamera
+#print 'm_radiansAngleofCamera', m_radiansAngleofCamera
 
 #extrensic parameters
 
@@ -161,13 +161,13 @@ def getCameraStream(rawCapture, networkTable):
         rawCapture.truncate(0)
         h,w = image.shape[:2]
         newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(m_cameraMatrix,m_distCoeffs,(w,h),1,(w,h))
-        ###print 'undistorting'
+        #print 'undistorting'
         undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
-        ###print 'undistorted'
+        #print 'undistorted'
         #small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
         #cv2.imshow('h', image)
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
-        ##cv2.waitkey(0)
+        #cv2.waitkey(0)
         #cv2.destroyAllWindows()
         return robotTimestamp,undistortedImage, timestamp2
     
@@ -189,70 +189,70 @@ def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,58,100,5,63,255,190)#(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
 
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
-    ##print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
+    #print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
     correctSizeList = filterSize(correctNumberOfContoursList,10, 2000,10,2000)
     drawBoundingBoxes(img, correctSizeList)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
     
-    ##print 'correctSizeList: ',len(correctSizeList)
+    #print 'correctSizeList: ',len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,-1,0.5)
-    ##print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
+    #print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
     
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
     
-    ##print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
+    #print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     drawBoundingBoxes(img, correctLengthToWidthRatioList)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
     
     
     #correctDistanceBetweenTargetsList = filterByOtherTargetLift(correctBlack2WhiteRatioList, 4.4, 25, 30)
 
-    ###print 'correctDistanceBetweenTargetsList: ',len(correctDistanceBetweenTargetsList)
+    #print 'correctDistanceBetweenTargetsList: ',len(correctDistanceBetweenTargetsList)
     
         
     if len(correctLengthToWidthRatioList) != 2 and len(correctLengthToWidthRatioList) != 0:
         conjoinedBloblist = conjoinAnyBlobs(correctSizeList,0.5)
         betterConjoinedBloblist = []
 
-        ###print 'conjoinedBloblist', conjoinedBloblist
+        #print 'conjoinedBloblist', conjoinedBloblist
         for conjoinedBlob in conjoinedBloblist:
-            ###print 'len(conjoinedBlob): ',len(conjoinedBlob)
+            #print 'len(conjoinedBlob): ',len(conjoinedBlob)
             if len(conjoinedBlob) == 4:
                 betterConjoinedBloblist = betterConjoinedBloblist + [conjoinedBlob]
         if len(betterConjoinedBloblist) != 0:
 
             for conjoinedBlob in betterConjoinedBloblist:
                 betterFilteredList = correctLengthToWidthRatioList + [conjoinedBlob]
-                ###print "adding: ", conjoinedBlob
+                #print "adding: ", conjoinedBlob
         else:
             betterFilteredList = correctLengthToWidthRatioList
 
-            ##print "here"
-        ##print 'len(betterFilteredList): ', len(betterFilteredList)
-        ##print '[betterFilteredList]: ', [betterFilteredList]
+            #print "here"
+        #print 'len(betterFilteredList): ', len(betterFilteredList)
+        #print '[betterFilteredList]: ', [betterFilteredList]
         correctSizeList = filterSize(betterFilteredList,10, 2000,10,2000)
         correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,-1,0.5)
         correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
         betterFilteredList = filterByOtherTargetLift(correctLengthToWidthRatioList,5,0.2,0.5)
-        ##print '1'
-        ##print 'final result: ', len(betterFilteredList)
+        #print '1'
+        #print 'final result: ', len(betterFilteredList)
 
         drawBoundingBoxes(img, betterFilteredList)
-        ##cv2.waitkey(0)
+        #cv2.waitkey(0)
         #cv2.destroyAllWindows()
         if len(betterFilteredList) != 2 and len(correctLengthToWidthRatioList) == 1:
             return True, correctLengthToWidthRatioList
@@ -268,7 +268,7 @@ def findLiftTarget(img):
         if firstHeight > secondHeight:
             ret, conjoinedBlob = checkForConjoiningBlobs(secondBoundingBox,correctNumberOfContoursList, 0.5)
 
-            ###print 'conjoinedBlob: ', conjoinedBlob
+            #print 'conjoinedBlob: ', conjoinedBlob
             if ret:
                 filteredList = [conjoinedBlob, firstBoundingBox]
                 
@@ -278,7 +278,7 @@ def findLiftTarget(img):
         else:
             ret, conjoinedBlob = checkForConjoiningBlobs(firstBoundingBox, correctSizeList, 0.5)
 
-            ###print 'conjoinedBlob: ', conjoinedBlob
+            #print 'conjoinedBlob: ', conjoinedBlob
             
             if ret:
                 filteredList = [conjoinedBlob, secondBoundingBox]
@@ -286,29 +286,29 @@ def findLiftTarget(img):
             else:
                 filteredList = correctLengthToWidthRatioList
 
-        ###print 'filteredList 1: ', filteredList
+        #print 'filteredList 1: ', filteredList
         drawBoundingBoxes(img, filteredList)
-        ##cv2.waitkey(0)
+        #cv2.waitkey(0)
 
         #cv2.destroyAllWindows()
         filteredList = filterByOtherTargetLift(filteredList, 5, 0.2, 0.5)
 
-        ###print 'filteredList 2: ', filteredList
-        ###print
-        ###print 'filteredList: ', filteredList
+        #print 'filteredList 2: ', filteredList
+        #print
+        #print 'filteredList: ', filteredList
         #for box in filteredList:
-         #   ###print box
+         #   #print box
           
           #  drawBoundingBoxes(img, filteredList)
-           # ##cv2.waitkey(0)
+           # #cv2.waitkey(0)
             #cv2.destroyAllWindows()
         
         if len(filteredList) == 2:
 
-            ##print 'YES final result: ', len(filteredList)
+            #print 'YES final result: ', len(filteredList)
             return True, filteredList
         
-    ##print 'final result: 0'
+    #print 'final result: 0'
     return False, correctBlack2WhiteRatioList
     
     
@@ -317,36 +317,36 @@ def findHighGoalTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,58,100,5,63,255,190)
     #cv2.imshow('correctColorImage', correctColorImage)
-    ##cv2.waitkey(0)
+    #cv2.waitkey(0)
     #cv2.destroyAllWindows()
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
 
-    ##print 'len(correctNumberOfContoursList)', len(correctNumberOfContoursList)
+    #print 'len(correctNumberOfContoursList)', len(correctNumberOfContoursList)
     drawBoundingBoxes(img, correctNumberOfContoursList)
-    ##cv2.waitkey()
+    #cv2.waitkey()
     correctSizeList = filterSize(correctNumberOfContoursList,10,500,10,500)
-    ##print 'len(correctSizeList)', len(correctSizeList)
+    #print 'len(correctSizeList)', len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    ##cv2.waitkey()
+    #cv2.waitkey()
     correctWidth = filterLength2WidthRatio(correctSizeList, 2.5, 3.5)
-    ##print 'len(correctWidth)', len(correctWidth)
+    #print 'len(correctWidth)', len(correctWidth)
     drawBoundingBoxes(img, correctWidth)
-    ##cv2.waitkey()
+    #cv2.waitkey()
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctWidth, preparedImage,0,3)
-    ##print 'len(correctBlack2WhiteRatioList)', len(correctBlack2WhiteRatioList)
+    #print 'len(correctBlack2WhiteRatioList)', len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
     correctFilterByOtherTargetsList = filterByOtherTargetHighGoal(correctBlack2WhiteRatioList,2,20,2)
-    ##print 'correctFilterByOtherTargetsList', len(correctFilterByOtherTargetsList)
-    ##cv2.waitkey()
+    #print 'correctFilterByOtherTargetsList', len(correctFilterByOtherTargetsList)
+    #cv2.waitkey()
     #correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, preparedImage,1,4)
 
-    ###print len(correctTopHalfBlack2WhiteRatioList)
+    #print len(correctTopHalfBlack2WhiteRatioList)
     #drawBoundingBoxes(img, correctTopHalfBlack2WhiteRatioList)
     
     #correctLeftHalfBlack2WhiteRatioList = filterLeftHalfBlack2WhiteRatio(correctTopHalfBlack2WhiteRatioList, preparedImage,0,10)
-    ###print len(correctLeftHalfBlack2WhiteRatioList)
+    #print len(correctLeftHalfBlack2WhiteRatioList)
     #drawBoundingBoxes(img, correctLeftHalfBlack2WhiteRatioList)
     #while True:
      #   minRatio = cv2.getTrackbarPos('minRatio','Processed Image')
@@ -360,25 +360,25 @@ def findHighGoalTarget(img):
         #drawBoundingBoxes(preparedImage, correctLeftHalfBlack2WhiteRatioList)
         
         
-        #key = ##cv2.waitkey(0)
+        #key = #cv2.waitkey(0)
 #        if key == ord('q'): # quit
  #           return None
   #      elif key == ord('g'): # good
    #         break
         # Try again on any other key
 
-    ###print
-#    ###print minRatio
- #   ###print maxRatio
-  #  ###print 
-   # ###print 
-    ###print 
-#    ###print 
- #   ###print
+    #print
+#    #print minRatio
+ #   #print maxRatio
+  #  #print 
+   # #print 
+    #print 
+#    #print 
+ #   #print
     #correctDistanceBetweenTargets = filterByDistanceBetweenTargets(correctBlack2WhiteRatioList)
-    ###print len(correctDistanceBetweenTargets)
+    #print len(correctDistanceBetweenTargets)
     #drawBoundingBoxes(img, correctDistanceBetweenTargets)
-    ###print
+    #print
     #distanceUShapeIsFromTarget = getDistanceUShapeIsFromTarget(correctTemplateMatchList)
     filteredList = correctFilterByOtherTargetsList
     return len(filteredList) == 1, filteredList
@@ -431,7 +431,7 @@ def filterLength2WidthRatio(goodBoundingBoxes, lowLengthToWidthRatio, highLength
         width =  box[2]
         height =  box[3]
 
-        ##print 'lowLengthToWidthRatio < (width + 0.0)/ (height+ 0.0) < highLengthToWidthRatio', (width + 0.0)/ (height+ 0.0)
+        #print 'lowLengthToWidthRatio < (width + 0.0)/ (height+ 0.0) < highLengthToWidthRatio', (width + 0.0)/ (height+ 0.0)
         if lowLengthToWidthRatio < (width + 0.0)/ (height+ 0.0) < highLengthToWidthRatio:
             betterBoundingBoxes = betterBoundingBoxes +  [box]
     return betterBoundingBoxes
@@ -445,15 +445,15 @@ def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, black
         
         numberOfWhitePixels = cv2.countNonZero(tempImage)
 
-        ###print 'box', box
+        #print 'box', box
         if blackToWhiteRatioMin < ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels) < blackToWhiteRatioMax:#number of black pixels for every white pixel
             betterBoundingBoxes = betterBoundingBoxes + [box]
-            ###print "the good one: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
+            #print "the good one: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
         else:
-            ###print 'box', box
-            ###print "the bad ones: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
+            #print 'box', box
+            #print "the bad ones: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
             #cv2.imshow('temp Image',tempImage)
-            ##cv2.waitkey()
+            #cv2.waitkey()
             #cv2.destroyAllWindows()
             pass
     return betterBoundingBoxes
@@ -482,22 +482,6 @@ def filterLeftHalfBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMi
             betterBoundingBoxes = betterBoundingBoxes + [box]
     return betterBoundingBoxes
 
-#def filterByUShapeTemplateMatch(goodBoundingBoxes, image):
-    #Creates and matches a U shape template over "Blobs" that are passed in; Returns blobs that are over 70%(I think %) similar to the template
- #   betterBoundingBoxes = []
-  #  for box in goodBoundingBoxes:
-   #     x,y,width,height = box
-    #    tempImage = image[y:y+height+1, x:x+width+1]
-     #   template = np.zeros((width,height,3), np.uint8)
-      #  cv2.rectangle(template,(0,0),(height/7,height), (0,255,0),-1)
-       # cv2.rectangle(template,(0,height- height/7),(width,height),(0,255,0),-1)
-        #cv2.rectangle(template,(width - height/7,0),(width,height),(0,255,0),-1)
-#        binaryTemplate = filterColors(template)
- #       results = cv2.matchTemplate(tempImage,binaryTemplate,cv2.TM_CCOEFF_NORMED)
-  #      minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(results)
-   #     if maxVal > .7:
-    #        betterBoundingBoxes = betterBoundingBoxes + [box]
-    #return betterBoundingBoxes
 
 def filterByOtherTargetHighGoal(goodBoundingBoxes, yOffsetRatio, xOffsetDelta, heightOffsetRatio):
     #filterByDistanceBetweenTargetsHighGoal(0.5,2,)
@@ -515,19 +499,19 @@ def filterByOtherTargetHighGoal(goodBoundingBoxes, yOffsetRatio, xOffsetDelta, h
             
             if 0.8*yDifference < secondY - y < 1.2*yDifference :
 
-                ###print "It passes the Y test"
+                #print "It passes the Y test"
                 if secondX - xOffsetDelta < x <secondX + height + xOffsetDelta:
-                    ###print "It passed the first X test"
+                    #print "It passed the first X test"
                 
                     if (0.8*heightOffsetRatio < height/secondHeight < 1.2*heightOffsetRatio):
-                        ###print "It passed the second X test"
+                        #print "It passed the second X test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                     else:
-                        pass ###print "It did not pass the second X test, width = ", width, "and secondWidth = ", secondWidth
+                        pass #print "It did not pass the second X test, width = ", width, "and secondWidth = ", secondWidth
                 else:
-                     pass###print "It did not pass the first X test x was: ", x, "and it had to be between ", secondX - 25, "and", secondX + 25
+                     pass#print "It did not pass the first X test x was: ", x, "and it had to be between ", secondX - 25, "and", secondX + 25
             else:
-                pass###print "It did not pass the first Y test secondY - y was: ", secondY - y, "and the y difference was: ", yDifference
+                pass#print "It did not pass the first Y test secondY - y was: ", secondY - y, "and the y difference was: ", yDifference
                        
     return betterBoundingBoxes
 
@@ -537,9 +521,9 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffsetRatio, heightOffset
         return goodBoundingBoxes
     for box in goodBoundingBoxes:
 
-        ###print 'box: ',box
+        #print 'box: ',box
         if len(box) == 0:
-            ###print 'uh oh 1'
+            #print 'uh oh 1'
             continue
         x,y,width,height = box
         
@@ -550,28 +534,28 @@ def filterByOtherTargetLift(goodBoundingBoxes, ratio, yOffsetRatio, heightOffset
                 continue
             if len(secondBox) == 0:
 
-                ###print 'uh oh 3'
+                #print 'uh oh 3'
                 continue
             
-            ###print 'secondBox: ',secondBox
-            ###print 'len(secondBox): ', len(secondBox)
-            ###print 'len(goodBoundingBoxes): ',len(goodBoundingBoxes)
+            #print 'secondBox: ',secondBox
+            #print 'len(secondBox): ', len(secondBox)
+            #print 'len(goodBoundingBoxes): ',len(goodBoundingBoxes)
             secondX,secondY,secondWidth,secondHeight = secondBox
 
-            ##print 'width', width
+            #print 'width', width
             xDifference = width*ratio #Constant of proportionality of width of the 
             #retro Reflective to the width between the retro targets top left to top left
-            ##print 'xDifference is:', xDifference
-            ##print 'comparing: ', box, 'and', secondBox
+            #print 'xDifference is:', xDifference
+            #print 'comparing: ', box, 'and', secondBox
             
             if xDifference - width*2 < secondX - x < xDifference:
-                ##print "passed X test"
+                #print "passed X test"
                 
                 if secondY - yOffsetRatio*secondHeight < y < secondY + yOffsetRatio*secondHeight :
-                    ##print "passed Y test"
+                    #print "passed Y test"
                     if (secondHeight-heightOffsetRatio*secondHeight < height < secondHeight + heightOffsetRatio*secondHeight or
                         height-heightOffsetRatio*height < secondHeight < height + heightOffsetRatio*height):
-                        ##print "passed Height test"
+                        #print "passed Height test"
                         betterBoundingBoxes = betterBoundingBoxes + [box]
                         betterBoundingBoxes = betterBoundingBoxes + [secondBox]
                         
@@ -589,7 +573,7 @@ def checkForConjoiningBlobs(goodBoundingBox, otherBoundingBoxesList, ratio):
     betterBoundingBox = []
     x,y,width,height = goodBoundingBox
 
-    ###print 'the Length is: ', len(otherBoundingBoxesList)
+    #print 'the Length is: ', len(otherBoundingBoxesList)
     ret = False
     for box in otherBoundingBoxesList:
         secondX,secondY,secondWidth,secondHeight = box
@@ -599,14 +583,14 @@ def checkForConjoiningBlobs(goodBoundingBox, otherBoundingBoxesList, ratio):
          
         if ((x - width*ratio < secondX < x + width*ratio or x + width - width*ratio < secondX + secondWidth < x + width + width*ratio)):
 
-            ##print "Conjoining blobs: Passed X test"
+            #print "Conjoining blobs: Passed X test"
          
             if y - 1.5*height < secondY < y:
-                ##print 'Conjoining blobs: Passed Y test'
+                #print 'Conjoining blobs: Passed Y test'
                 betterBoundingBox = (x,secondY,width,(y + height) - secondY)
                 
                 if ret:
-                    ###print "Error: Conjoined more than one blob"
+                    #print "Error: Conjoined more than one blob"
                     return False, betterBoundingBox
                 ret = True
         
@@ -661,7 +645,7 @@ def getDistanceAwayHighGoal(boundingBoxOfTarget):
 
 def getDistanceAwayLift(boundingBoxOfTarget):
 
-    ###print "Bounding Box: ", boundingBoxOfTarget
+    #print "Bounding Box: ", boundingBoxOfTarget
     x,y,width,height = boundingBoxOfTarget
     distanceFromCenterY = m_centerYOfImage - y
     #print "m_centerYOfImage: ", m_centerYOfImage
@@ -673,7 +657,7 @@ def getDistanceAwayLift(boundingBoxOfTarget):
     #print 'offsetAddedElevationAngle', offsetAddedElevationAngle*(180/math.pi)
     #print offsetAddedElevationAngle*180/math.pi
     #print math.tan(offsetAddedElevationAngle)
-    ###print
+    #print
     distanceAwayLift = m_heightOfLiftTargetFromCamera/math.tan(offsetAddedElevationAngle) #Finding Adjacent; open to change
     #print 'distanceAwayLift', distanceAwayLift
     betterDistanceAwayLift = distanceAwayLift/math.cos(m_radiansAngleofCamera)
@@ -682,122 +666,151 @@ def getDistanceAwayLift(boundingBoxOfTarget):
 def get0(vector):
     return vector[0]
 
-def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(picture, boundingBoxesOfTargets):
+#Found on stack overflow; question 7446126
+def getIntersectingPoint(line1, line2):
+    origin1 = line1[2:4, :] #np.mat([line1[2], line1[3]])
+    origin2 = line2[2:4, :] #np.mat([line2[2], line2[3]])
+    d1 = line1[0:2, :] #np.mat([line1[0], line1[1]])
+    d2 = line2[0:2, :] #np.mat([line2[0], line2[1]])
+    x = origin2 - origin1
+    #d1 = point1 - origin1
+    #d2 = point2 - origin2
+    cross = d1[0,0]*d2[1,0] - d1[1,0]*d2[0,0]   
+    t1 = (x[0,0]*d2[1,0] - x[1,0]*d2[0,0])/ cross
+    return origin1 + d1 * t1
+
+def getBetterCoordinateMatrix(matrix):
+    x = matrix[0][0]
+    y = matrix[1][0]
+    return [x,y]
+
+def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(picture, boundingBoxesOfTargets):
     imgpoints = []
-    for target in boundingBoxesOfTargets:
-        offset = 10
-        x,y,width,height = target
-        tempImageCorner1 = picture[y - offset:y+offset, x-offset:x+offset]
-        tempImageCorner2 = picture[y + height - offset:y+height+ offset, x+ width-offset:x+width+offset]
-        tempImageCorner3 = picture[y + height - offset:y+height+ offset, x-10:x+offset]
-        tempImageCorner4 = picture[y - offset:y+ offset, x + width - offset:x+width+ offset]
-            
-        #tempCornerImage1
-        #correctColorImage = filterColors(tempImage,50,60,100,100,190,255)#(img,55,250,10,60,255,65)
-    
+    if len(boundingBoxesOfTargets) == 1:
+        correctTarget = boundingBoxesOfTargets[0]
+    else:
+        firstBoundingBox = boundingBoxesOfTargets[0]
+        secondBoundingBox = boundingBoxesOfTargets[1]
 
-        ###print tempImage
-        grayTempCorner1 = cv2.cvtColor(tempImageCorner1, cv2.COLOR_BGR2GRAY)
-        grayTempCorner2 = cv2.cvtColor(tempImageCorner2, cv2.COLOR_BGR2GRAY)
-        grayTempCorner3 = cv2.cvtColor(tempImageCorner3, cv2.COLOR_BGR2GRAY)
-        grayTempCorner4 = cv2.cvtColor(tempImageCorner4, cv2.COLOR_BGR2GRAY)
-            
-        #cv2.imshow('binary',correctColorImage)
-        ##cv2.waitkey()
-        grayTempCorner1 = np.float32(grayTempCorner1)
-        grayTempCorner2 = np.float32(grayTempCorner2)
-        grayTempCorner3 = np.float32(grayTempCorner3)
-        grayTempCorner4 = np.float32(grayTempCorner4)
-            
-        dst1 = cv2.cornerHarris(grayTempCorner1, 2, 5, 0.9)
+        firstX, firstY, firstWidth, firstHeight = firstBoundingBox
+        secondX, secondY, secondWidth, secondHeight = secondBoundingBox
+        print "firstBoundingBox", firstBoundingBox
+        print "secondBoundingBox", secondBoundingBox
+        print "(firstX + secondX + secondWidth)/2", (firstX + secondX + secondWidth)/2
+        print "m_centerXOfImage", m_centerXOfImage
+        if (firstX + secondX + secondWidth)/2 < m_centerXOfImage:
+            if firstX > secondX:
+                correctTarget = firstBoundingBox
+                incorrectTarget = secondBoundingBox
 
-        ###print 'dst1', dst1
-        dst2 = cv2.cornerHarris(grayTempCorner2, 2, 5, 0.9)
-        dst3 = cv2.cornerHarris(grayTempCorner3, 2, 5, 0.9)
-        dst4 = cv2.cornerHarris(grayTempCorner4, 2, 5, 0.9)
-            
-        ret, dst1 = cv2.threshold(dst1, 0.01*dst1.max(),255,0)
-        ret, dst2 = cv2.threshold(dst2, 0.01*dst2.max(),255,0)
-        ret, dst3 = cv2.threshold(dst3, 0.01*dst3.max(),255,0)
-        ret, dst4 = cv2.threshold(dst4, 0.01*dst4.max(),255,0)
-            
-        dst1 = np.uint8(dst1)
-        dst2 = np.uint8(dst2)
-        dst3 = np.uint8(dst3)
-        dst4 = np.uint8(dst4)
-            
-        ret1, labels1, stats1, centroids1 = cv2.connectedComponentsWithStats(dst1)
-        ret2, labels2, stats2, centroids2 = cv2.connectedComponentsWithStats(dst2)
-        ret3, labels3, stats3, centroids3 = cv2.connectedComponentsWithStats(dst3)
-        ret4, labels4, stats4, centroids4 = cv2.connectedComponentsWithStats(dst4)
-            
-
-        ###print 'centroids', centroids
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-            
-        corners1 = cv2.cornerSubPix(grayTempCorner1,np.float32(centroids1) , (5,5), (-1,-1), criteria)
-        corners2 = cv2.cornerSubPix(grayTempCorner2,np.float32(centroids2) , (5,5), (-1,-1), criteria)
-        corners3 = cv2.cornerSubPix(grayTempCorner3,np.float32(centroids3) , (5,5), (-1,-1), criteria)
-        corners4 = cv2.cornerSubPix(grayTempCorner4,np.float32(centroids4) , (5,5), (-1,-1), criteria)
-
-        corners1 = [[corners1[0][0] + x - offset, corners1[0][1] + y -offset]]
-        corners2 = [[corners2[0][0] + x - offset + width,corners2[0][1]+ y - offset + height]]
-        corners3 = [[corners3[0][0] + x - offset ,corners3[0][1]+ height + y - offset]]
-        corners4 = [[corners4[0][0] + x - offset + width ,corners4[0][1] + y - offset]]
-           
-
-        ###print 'len corners', len(corners1) + len(corners2) + len(corners3) + len(corners4)
-        #np.append(imgpoints,corners)
-        #imgpoints.append(corners)
-        if imgpoints == []:
-            imgpoints = corners1
-            imgpoints = np.append(imgpoints,corners2,0)
-            imgpoints = np.append(imgpoints,corners3,0)
-            imgpoints = np.append(imgpoints,corners4,0)
-        else:
-            imgpoints = np.append(imgpoints, corners1,0)
-            imgpoints = np.append(imgpoints, corners2,0)
-            imgpoints = np.append(imgpoints, corners3,0)
-            imgpoints = np.append(imgpoints, corners4,0)
-                
-        betterCorners = []
+            else:
+                correctTarget = secondBoundingBox
+                incorrectTarget = firstBoundingBox
+ 
         
+        else:
+            if firstX > secondX:
+                correctTarget = secondBoundingBox
+                incorrectTarget = firstBoundingBox
 
-        ###print 'width', width
-        ###print 'height', height
+            else:
+                correctTarget = firstBoundingBox
+                incorrectTarget = secondBoundingBox
+
+        if correctTarget[0] > incorrectTarget[0]:
+            leftTarget = False
+
+        else:
+            leftTarget = True
+
+      	if leftTarget:
+            objPoints = np.matrix([[-5.125,0,15.75],[-3.125,0,10.75],[-5.125,0,10.75],[-3.125,0,15.75]])
+        else:
+            objPoints = np.matrix([[3.125,0,15.75],[5.125,0,10.75],[3.125,0,10.75],[5.125,0,15.75]])
+        
+        x,y,width,height = correctTarget
+        offset = height*0.21212121
+        tempImage = picture[y - offset:y+height+offset, x-offset:x+width+offset]
+                
+        correctColorImage = filterColors(tempImage,50,240,10,65,255,80)
+        correctColorImage = cv2.GaussianBlur(correctColorImage, (5,5),0)
+        correctColorImage, contours, hierarchy = cv2.findContours(correctColorImage, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             
-    ###print 'objPoints', objPoints
-    ###print 'imgpoints', imgpoints
-    ret, targetRvec, targetTvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs)
+        leftLinePoints = []
+        rightLinePoints = []
+        topLinePoints = []
+        bottomLinePoints = []
+
+        maxlength = -1
+        for contour in contours:
+            lengthOfContour = len(contour)
+            if lengthOfContour > maxlength:
+                maxlength = lengthOfContour
+                maxLengthContour = contour
+                
+        for coordinate in maxLengthContour:
+            coordinateX, coordinateY = coordinate[0]
+                
+            if offset/2 < coordinateX < offset + width*0.5 and offset + height*0.25 < coordinateY < height*0.75 + offset:
+                leftLinePoints.append(coordinate)
+                
+            elif offset/2 < coordinateY < offset + height*0.5 and offset + width*0.25 < coordinateX < width*0.75 + offset:
+                topLinePoints.append(coordinate)
+
+            elif width*0.5 + offset< coordinateX < width + 1.5*offset and offset + height*0.25 < coordinateY < height*0.75 + offset:
+                rightLinePoints.append(coordinate)
+
+            elif height*0.5 + offset < coordinateY < height + 1.5*offset and offset + width*0.25 < coordinateX < width*0.75 + offset:
+                bottomLinePoints.append(coordinate)
+
+        leftLine = cv2.fitLine(np.array(leftLinePoints), cv2.DIST_L2, 0, 0,0)
+        rightLine = cv2.fitLine(np.array(rightLinePoints), cv2.DIST_L2, 0, 0,0)
+        topLine = cv2.fitLine(np.array(topLinePoints), cv2.DIST_L2, 0, 0,0)
+        bottomLine = cv2.fitLine(np.array(bottomLinePoints), cv2.DIST_L2, 0, 0,0)
+       
+        topLeftCorner = getIntersectingPoint(leftLine, topLine)
+        topRightCorner = getIntersectingPoint(topLine, rightLine)
+        bottomRightCorner = getIntersectingPoint(bottomLine, rightLine)
+        bottomLeftCorner = getIntersectingPoint(bottomLine, leftLine) 
+
+            
+        topLeftCorner = getBetterCoordinateMatrix(topLeftCorner)
+        topRightCorner = getBetterCoordinateMatrix(topRightCorner)
+        bottomRightCorner = getBetterCoordinateMatrix(bottomRightCorner)
+        bottomLeftCorner = getBetterCoordinateMatrix(bottomLeftCorner)
+
+            
+        topLeftCorner = [topLeftCorner[0] + x - offset, topLeftCorner[1] + y - offset]
+        topRightCorner = [topRightCorner[0] + x - offset, topRightCorner[1] + y - offset]
+        bottomRightCorner = [bottomRightCorner[0] + x - offset, bottomRightCorner[1] + y - offset]
+        bottomLeftCorner = [bottomLeftCorner[0] + x - offset, bottomLeftCorner[1] + y - offset]
+            
+        imgpoints.append(topLeftCorner)
+        imgpoints.append(bottomRightCorner)
+        imgpoints.append(bottomLeftCorner)
+        imgpoints.append(topRightCorner)
+        
+        
+    imgpoints = np.array(imgpoints)
+    cv2.destroyAllWindows()
+    ret, targetRvec, targetTvec = cv2.solvePnP(objPoints, imgpoints, m_cameraMatrix, m_distCoeffs, None, None, False, cv2.SOLVEPNP_ITERATIVE)
+    
     simpleVec = np.append(targetTvec[0],targetTvec[1])#np.array(targetTvec)#map(get0, targetTvec)
     simpleVec = np.append(simpleVec, targetTvec[2])
     targetR,s = cv2.Rodrigues(targetRvec)
-
-    ###print 'simpleVec', simpleVec
-    ###print 'm_RCamera', m_RCamera
-    ###print 'type(m_RCamera)', type(m_RCamera)
-    ###print 'targetTvec', targetTvec
-    ###print 'm_tvecCamera', m_tvecCamera.T
-    ###print 'np.multiply(m_RCamera, simpleVec)', m_RCamera.dot(simpleVec)
     robotTvec = m_RCamera.dot(simpleVec) + m_tvecCamera.T
-    ###print 'robotTvec', robotTvec
-    ###print 'targetR', targetR
     robotR = targetR*m_RCamera
-    ###print 'robotR', robotR
     robotTvec = robotTvec[0]
     
     robotTvecAfterTurning = robotR.dot(robotTvec)
     return robotR, robotTvecAfterTurning
-
-
-
 
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget):
     oppositeAngle = getRadiansToTurnFromOpticalAxis(boundingBoxOfTarget)
     #print "getRadiansToTurnFromOpticalAxis", oppositeAngle
     distanceAwayLift = getDistanceAwayLift(boundingBoxOfTarget)
     #print "distanceAwayLift", distanceAwayLift
-    ###print distanceAwayLift
+    #print distanceAwayLift
     distanceToMoveLaterally = math.sin(oppositeAngle)*distanceAwayLift
     distanceToMoveForwardLift = math.cos(oppositeAngle)*distanceAwayLift
     return distanceToMoveLaterally, distanceToMoveForwardLift
@@ -862,78 +875,6 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
     #distanceToMoveLaterally = distanceToMoveLaterally-2.5
         
     return distanceToMoveLaterally, distanceToMoveForwardLift
-    
-    
-def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(boundingBoxesOfTargets):
-    firstDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[0]) #Need this name because boundingBoxesOfTargets does not nessesarily give the targets from left to right
-    secondDistanceAway = getDistanceAwayLift(boundingBoxesOfTargets[1])
-    if firstDistanceAway > secondDistanceAway:
-        furtherTargetHypotenuse = firstDistanceAway
-        closerTargetHypotenuse = secondDistanceAway
-        furtherBoundingBox = boundingBoxesOfTargets[0]
-        closerBoundingBox = boundingBoxesOfTargets[1] 
-    else:
-        furtherTargetHypotenuse = secondDistanceAway
-        closerTargetHypotenuse = firstDistanceAway
-        furtherBoundingBox = boundingBoxesOfTargets[1]
-        closerBoundingBox = boundingBoxesOfTargets[0]
-
-    if furtherBoundingBox[0] > closerBoundingBox[0]:
-        directionToTurn = -1
-        directionToSlideLaterally = 1
-    else:
-        directionToTurn = 1   
-        directionToSlideLaterally = -1
-
-
-    ###print "furtherTargetHypotenuse: ", furtherTargetHypotenuse
-    ###print "closerTargetHypotenuse: ", closerTargetHypotenuse
-
-    
-    angleFromOpticalAxisToFurtherTarget = getRadiansToTurnFromOpticalAxis(furtherBoundingBox)
-    angleFromOpticalAxisToCloserTarget = getRadiansToTurnFromOpticalAxis(closerBoundingBox)
-    furtherTargetOpposite = math.sin(angleFromOpticalAxisToFurtherTarget)*furtherTargetHypotenuse
-    furtherTargetAdjacent = math.cos(angleFromOpticalAxisToFurtherTarget)*furtherTargetHypotenuse
-    closerTargetOpposite = math.sin(angleFromOpticalAxisToCloserTarget)*closerTargetHypotenuse
-    closerTargetAdjacent = math.cos(angleFromOpticalAxisToCloserTarget)*closerTargetHypotenuse
-    centerOfRobotFurtherTargetOpposite = furtherTargetOpposite + m_lateralRightOffsetOfCamera
-    centerOfRobotFurtherTargetAdjacent = furtherTargetAdjacent + m_forwardOffsetOfLiftCamera
-    centerOfRobotCloserTargetOpposite = closerTargetOpposite + m_lateralRightOffsetOfCamera
-    centerOfRobotCloserTargetAdjacent = closerTargetAdjacent + m_forwardOffsetOfLiftCamera
-    centerOfRobotFurtherDistanceHypotenuse = math.sqrt(centerOfRobotFurtherTargetOpposite*centerOfRobotFurtherTargetOpposite + centerOfRobotFurtherTargetAdjacent*centerOfRobotFurtherTargetAdjacent)
-    centerOfRobotCloserDistanceHypotenuse = math.sqrt(centerOfRobotCloserTargetOpposite*centerOfRobotCloserTargetOpposite + centerOfRobotCloserTargetAdjacent*centerOfRobotCloserTargetAdjacent)
-    ratio1 = ((math.pow(centerOfRobotFurtherDistanceHypotenuse, 2) + math.pow(m_widthOfLift, 2) -
-              math.pow(centerOfRobotCloserDistanceHypotenuse, 2))/(2*centerOfRobotFurtherDistanceHypotenuse*m_widthOfLift)) #Using law of coesins
-    ratio = ((-centerOfRobotCloserDistanceHypotenuse*centerOfRobotCloserDistanceHypotenuse + m_widthOfLift*m_widthOfLift +
-        centerOfRobotFurtherDistanceHypotenuse*centerOfRobotFurtherDistanceHypotenuse)/
-        (2*m_widthOfLift*centerOfRobotFurtherDistanceHypotenuse))
-
-
-    ##print 'centerOfRobotCloserDistanceHypotenuse ', centerOfRobotCloserDistanceHypotenuse
-    ##print 'centerOfRobotFurtherDistanceHypotenuse ', centerOfRobotFurtherDistanceHypotenuse
-    ##print 'ratio1', ratio1
-    ##print 'ratio', ratio
-    oppositeAngle = math.acos(ratio1)
-
-    
-    angleOfFurtherTargetToTargetDistance = math.pi - (math.pi/2 + oppositeAngle)
-    angleFromRobotToFurtherTarget = math.atan(centerOfRobotFurtherTargetOpposite/centerOfRobotFurtherTargetAdjacent)
-    angleFromRobotToCloserTarget = math.atan(centerOfRobotCloserTargetOpposite/centerOfRobotCloserTargetAdjacent)
-    angleToTurn = angleOfFurtherTargetToTargetDistance - angleFromRobotToFurtherTarget
-    centerOfRobotDistanceToMoveForward = math.cos(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
-    angleToTurn = angleToTurn*directionToTurn
-    centerOfRobotDistanceToMoveLaterally = math.sin(angleOfFurtherTargetToTargetDistance)*centerOfRobotFurtherDistanceHypotenuse
-    centerOfRobotDistanceToMoveLaterally = centerOfRobotDistanceToMoveLaterally*directionToSlideLaterally
-    gearPlacerDistanceToMoveForward = centerOfRobotDistanceToMoveForward - m_forwardOffsetOfGearPlacer
-    gearPlacerDistanceToMoveLaterally = centerOfRobotDistanceToMoveLaterally + m_lateralRightOffsetOfGearPlacer
-
-    ###print 'directionToSlideLaterally', directionToSlideLaterally
-    if (centerOfRobotDistanceToMoveLaterally > 0 ):
-        gearPlacerDistanceToMoveLaterally = gearPlacerDistanceToMoveLaterally - m_widthOfRetroReflectiveToLift
-    else:
-        gearPlacerDistanceToMoveLaterally = gearPlacerDistanceToMoveLaterally + m_widthOfRetroReflectiveToLift
-        
-    return angleToTurn, gearPlacerDistanceToMoveForward, gearPlacerDistanceToMoveLaterally
 
 def initNetworkTables():
     logging.basicConfig(level=logging.DEBUG)
@@ -965,7 +906,7 @@ def getDataFromNetworktables(networkTable):
     turnOnRet = networkTable.getBoolean("RobotEnabled", False)
     
     timestampRet = networkTable.getBoolean("TimestampRet", False)
-    ###print "timestampRet: ", timestampRet
+    #print "timestampRet: ", timestampRet
     timestamp = networkTable.getNumber('Timestamp', 0.0)
     return turnOnRet, timestampRet, timestamp
 
@@ -982,7 +923,7 @@ def saveImage(timestamp, networkTable):
         m_shortTermMemory.popleft()
     
     if m_shortTermMemory[0][0] == timestamp:
-        ###print "timestamp", timestamp
+        #print "timestamp", timestamp
         cv2.imwrite("/home/pi/test/AndromedaVision/FailedImageProcessingImages/Image%d.png" % timestamp, m_shortTermMemory[0][1])
         m_shortTermMemory.popleft()
 
@@ -1005,7 +946,7 @@ def dispatchCommands(timestamp, cameraStream, networkTable):
 def main():
     initializedCameraStream = cameraStreamInit()
 
-    ##print "2"
+    #print "2"
     sd = initNetworkTables()
     if m_typeOfCamera == 'Shooter':
         while True:
@@ -1013,7 +954,7 @@ def main():
             timestamp,cameraStream, timestampForPi = getCameraStream(initializedCameraStream, sd)
             setShortTermMemory(timestamp, cameraStream)
 
-            ##print 'timestamp', timestamp
+            #print 'timestamp', timestamp
             retHighGoal,highGoalTarget = findHighGoalTarget(cameraStream)
             if retHighGoal:
                 radiansToTurnHighGoalFromShooter, distanceAwayHighGoalFromShooter = getRadiansToTurnHighGoalAndDistanceAwayShooter(highGoalTarget)
@@ -1029,12 +970,12 @@ def main():
             timestamp,cameraStream, timestampForPi = getCameraStream(initializedCameraStream, sd)
             afterPicRobotParallelStatus = getRobotParallelStatus(sd)
             setShortTermMemory(timestampForPi, cameraStream)
-            ##print 'timestamp', timestamp
+            #print 'timestamp', timestamp
             retLift,liftTargets = findLiftTarget(cameraStream)
             if retLift and initialrobotParallelStatus and afterPicRobotParallelStatus:
-                #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally2(cameraStream, liftTargets)
+                #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(cameraStream, cameraStream, liftTargets)
 
-                ###print 'robotTvecAfterTurning', robotTvecAfterTurning
+                #print 'robotTvecAfterTurning', robotTvecAfterTurning
                 #eulerAngles = rotationMatrixToEulerAngles(robotR)
                 #radiansToTurnLift = eulerAngles[2]
                 #distanceToMoveLaterallyLift = robotTvecAfterTurning[0]
@@ -1043,13 +984,13 @@ def main():
                 radiansToTurnLift = 0
                 putDataOnNetworkTablesLift(sd,True,timestampForPi,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
                 #degreesToTurn = radiansToTurnLift*(180/math.pi)
-                ##print "degreesToTurnLift: ", degreesToTurn
+                #print "degreesToTurnLift: ", degreesToTurn
                 #print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"
                 #print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
            
             else:
                 putDataOnNetworkTablesLift(sd,False,timestampForPi,0,0,0)
-                ##print "Working"
+                #print "Working"
             dispatchCommands(timestampForPi, cameraStream, sd)    
             
 main()
