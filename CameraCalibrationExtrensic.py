@@ -413,8 +413,8 @@ def getBetterCoordinateMatrix(matrix):
     y = matrix[1][0]
     return [x,y]
 
-pictures = "/home/pi/test/AndromedaVision/FailedImageProcessingImages"
-yOffset = 0 #22 + 16.5
+pictures = "/home/pi/test/AndromedaVision/CameraCalibrationExtrensic"
+yOffset = 21.875 + 16.4
 print 'yOffset', yOffset
 objPoints = np.matrix([[-5.125,yOffset,15.75],[-3.125,yOffset,10.75],[-5.125,yOffset,10.75],[-3.125,yOffset,15.75],[3.125,yOffset,15.75],[5.125,yOffset,10.75],
                        [3.125,yOffset,10.75],[5.125,yOffset,15.75]]) #HARD CODE IN THESE VALUES
@@ -436,7 +436,7 @@ def calibrateCameraExtrensic():
             
             
             #print tempImage
-            correctColorImage = filterColors(tempImage,50,240,10,65,255,80)
+            correctColorImage = filterColors(tempImage,50,200,5,65,255,80)
             cv2.imshow('correctColorImage', correctColorImage)
             cv2.waitKey()
             cv2.destroyAllWindows()

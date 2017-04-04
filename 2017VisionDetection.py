@@ -134,7 +134,7 @@ def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
     m_camera.framerate = 10
 
-    m_camera.shutter_speed = 700
+    m_camera.shutter_speed = 900
 
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
@@ -723,7 +723,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(picture, boundingB
         else:
             leftTarget = True
 
-      	if leftTarget:
+        if leftTarget:
             objPoints = np.matrix([[-5.125,0,15.75],[-3.125,0,10.75],[-5.125,0,10.75],[-3.125,0,15.75]])
         else:
             objPoints = np.matrix([[3.125,0,15.75],[5.125,0,10.75],[3.125,0,10.75],[5.125,0,15.75]])
@@ -982,14 +982,14 @@ def main():
                 #distanceToDriveForwardLift = robotTvecAfterTurning[1]
                 distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets)
                 radiansToTurnLift = 0
-                putDataOnNetworkTablesLift(sd,True,timestampForPi,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
+                putDataOnNetworkTablesLift(sd,True,timestampForPi,timestamp,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
                 #degreesToTurn = radiansToTurnLift*(180/math.pi)
                 #print "degreesToTurnLift: ", degreesToTurn
-                #print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"
-                #print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
+                print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"
+                print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
            
             else:
-                putDataOnNetworkTablesLift(sd,False,timestampForPi,0,0,0)
+                putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
                 #print "Working"
             dispatchCommands(timestampForPi, cameraStream, sd)    
             
