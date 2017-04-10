@@ -134,7 +134,7 @@ def cameraStreamInit():
     #m_camera.resolution = (m_xResolution, m_yResolution)
     m_camera.framerate = 10
 
-    m_camera.shutter_speed = 900
+    m_camera.shutter_speed = 1000
 
     m_camera.iso = 100
     m_camera.exposure_mode = 'off'
@@ -167,7 +167,9 @@ def getCameraStream(rawCapture, networkTable):
         #small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
         #cv2.imshow('h', image)
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
+
         #cv2.waitkey(0)
+
         #cv2.destroyAllWindows()
         return robotTimestamp,undistortedImage, timestamp2
     
@@ -187,9 +189,10 @@ def setupImageWindow():
     
 def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
-    correctColorImage = filterColors(img,58,100,5,63,255,190)#(img,55,250,10,60,255,65)
+    correctColorImage = filterColors(img,59,150,5,63,255,75)#(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
-    #cv2.waitkey(0)
+
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
 
     preparedImage = prepareImage(correctColorImage)    
@@ -212,10 +215,11 @@ def findLiftTarget(img):
     #cv2.destroyAllWindows()
     
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
+
     
     #print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
-    drawBoundingBoxes(img, correctLengthToWidthRatioList)
-    #cv2.waitkey(0)
+    #drawBoundingBoxes(img, correctLengthToWidthRatioList)
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
     
@@ -694,10 +698,10 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(picture, boundingB
 
         firstX, firstY, firstWidth, firstHeight = firstBoundingBox
         secondX, secondY, secondWidth, secondHeight = secondBoundingBox
-        print "firstBoundingBox", firstBoundingBox
-        print "secondBoundingBox", secondBoundingBox
-        print "(firstX + secondX + secondWidth)/2", (firstX + secondX + secondWidth)/2
-        print "m_centerXOfImage", m_centerXOfImage
+        #print "firstBoundingBox", firstBoundingBox
+        #print "secondBoundingBox", secondBoundingBox
+        #print "(firstX + secondX + secondWidth)/2", (firstX + secondX + secondWidth)/2
+        #print "m_centerXOfImage", m_centerXOfImage
         if (firstX + secondX + secondWidth)/2 < m_centerXOfImage:
             if firstX > secondX:
                 correctTarget = firstBoundingBox
@@ -817,6 +821,7 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfT
 
 def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTargets):
     #print 'len(boundingBoxesOfTargets)', len(boundingBoxesOfTargets)
+    #print 'boundingBoxesOfTargets', boundingBoxesOfTargets
     if len(boundingBoxesOfTargets) == 1:
         boundingBoxOfTarget = boundingBoxesOfTargets[0]
         distanceToMoveLaterally, distanceToMoveForward = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
@@ -837,10 +842,10 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
 
     firstX, firstY, firstWidth, firstHeight = firstBoundingBox
     secondX, secondY, secondWidth, secondHeight = secondBoundingBox
-    print "firstBoundingBox", firstBoundingBox
-    print "secondBoundingBox", secondBoundingBox
-    print "(firstX + secondX + secondWidth)/2", (firstX + secondX + secondWidth)/2
-    print "m_centerXOfImage", m_centerXOfImage
+    #print "firstBoundingBox", firstBoundingBox
+    #print "secondBoundingBox", secondBoundingBox
+    #print "(firstX + secondX + secondWidth)/2", (firstX + secondX + secondWidth)/2
+    #print "m_centerXOfImage", m_centerXOfImage
     if (firstX + secondX + secondWidth)/2 < m_centerXOfImage:
         if firstX > secondX:
             correctTarget = firstBoundingBox
@@ -984,13 +989,15 @@ def main():
                 radiansToTurnLift = 0
                 putDataOnNetworkTablesLift(sd,True,timestampForPi,timestamp,radiansToTurnLift,distanceToMoveLaterallyLift,distanceToDriveForwardLift)
                 #degreesToTurn = radiansToTurnLift*(180/math.pi)
+
                 #print "degreesToTurnLift: ", degreesToTurn
                 print 'distanceToMoveLaterallyLift', distanceToMoveLaterallyLift, " Inches"
                 print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
            
             else:
+
                 putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
-                #print "Working"
+                print "Working"
             dispatchCommands(timestampForPi, cameraStream, sd)    
             
 main()
@@ -1000,9 +1007,9 @@ main()
 #pics = '/home/pi/test/AndromedaVision/WPI Pics'
 #for filename in os.listdir(pics):
  #   fullFileName = os.path.join(pics, filename)
-    #print 'fullFileName', fullFileName
-  #  pic = cv2.imread(fullFileName)
-   # retLift, liftTargets = findLiftTarget(pic)
+  #  #print 'fullFileName', fullFileName
+   # pic = cv2.imread(fullFileName)
+    #retLift, liftTargets = findLiftTarget(pic)
     #distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets)
     #print "distanceToMoveLaterallyLift", distanceToMoveLaterallyLift
 
