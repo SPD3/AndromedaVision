@@ -165,11 +165,15 @@ def getCameraStream(rawCapture, networkTable):
         undistortedImage = cv2.undistort(image, m_cameraMatrix, m_distCoeffs, None, newCameraMtx)
         #print 'undistorted'
         #small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
-        #cv2.imshow('h', image)
+        ##cv2.imshow('h', image)
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
+<<<<<<< HEAD
 
         #cv2.waitkey(0)
 
+=======
+        #cv2.waitKey(0)
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
         #cv2.destroyAllWindows()
         return robotTimestamp,undistortedImage, timestamp2
     
@@ -191,7 +195,10 @@ def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,59,150,5,63,255,75)#(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
+<<<<<<< HEAD
 
+=======
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
 
@@ -199,26 +206,31 @@ def findLiftTarget(img):
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
     correctNumberOfContoursList = filterContours(copy,4)
     #print 'correctNumberOfContoursList: ',len(correctNumberOfContoursList)
-    correctSizeList = filterSize(correctNumberOfContoursList,10, 2000,10,2000)
+    correctSizeList = filterSize(correctNumberOfContoursList,26, 2000,13,2000)
     drawBoundingBoxes(img, correctSizeList)
-    #cv2.waitkey(0)
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
     #print 'correctSizeList: ',len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    #cv2.waitkey(0)
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
-    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,-1,0.5)
+    correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctSizeList, preparedImage,-1,0.4)
     #print 'correctBlack2WhiteRatioList: ',len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
-    #cv2.waitkey(0)
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
 
     
+<<<<<<< HEAD
     #print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     #drawBoundingBoxes(img, correctLengthToWidthRatioList)
+=======
+    print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
+    drawBoundingBoxes(img, correctLengthToWidthRatioList)
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
@@ -256,7 +268,7 @@ def findLiftTarget(img):
         #print 'final result: ', len(betterFilteredList)
 
         drawBoundingBoxes(img, betterFilteredList)
-        #cv2.waitkey(0)
+        #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         if len(betterFilteredList) != 2 and len(correctLengthToWidthRatioList) == 1:
             return True, correctLengthToWidthRatioList
@@ -264,7 +276,7 @@ def findLiftTarget(img):
         return len(betterFilteredList) == 2, betterFilteredList
         
     if len(correctLengthToWidthRatioList) == 2 :
-        firstBoundingBox = correctLengthToWidthRatioList[0]
+        """firstBoundingBox = correctLengthToWidthRatioList[0]
         secondBoundingBox = correctLengthToWidthRatioList[1]
         #drawBoundingBox(img, firstBoundingBox)
         firstX, firstY, firstWidth, firstHeight = firstBoundingBox
@@ -281,8 +293,8 @@ def findLiftTarget(img):
                 
         else:
             ret, conjoinedBlob = checkForConjoiningBlobs(firstBoundingBox, correctSizeList, 0.5)
-
-            #print 'conjoinedBlob: ', conjoinedBlob
+            print 'ret', ret
+            print 'conjoinedBlob: ', conjoinedBlob
             
             if ret:
                 filteredList = [conjoinedBlob, secondBoundingBox]
@@ -292,7 +304,7 @@ def findLiftTarget(img):
 
         #print 'filteredList 1: ', filteredList
         drawBoundingBoxes(img, filteredList)
-        #cv2.waitkey(0)
+        #cv2.waitKey(0)
 
         #cv2.destroyAllWindows()
         filteredList = filterByOtherTargetLift(filteredList, 5, 0.2, 0.5)
@@ -304,24 +316,25 @@ def findLiftTarget(img):
          #   #print box
           
           #  drawBoundingBoxes(img, filteredList)
-           # #cv2.waitkey(0)
+           # #cv2.waitKey(0)
             #cv2.destroyAllWindows()
         
         if len(filteredList) == 2:
 
             #print 'YES final result: ', len(filteredList)
-            return True, filteredList
-        
+            return True, filteredList"""
+        return True, correctLengthToWidthRatioList
     #print 'final result: 0'
     return False, correctBlack2WhiteRatioList
+    
     
     
 def findHighGoalTarget(img):
      
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,58,100,5,63,255,190)
-    #cv2.imshow('correctColorImage', correctColorImage)
-    #cv2.waitkey(0)
+    ##cv2.imshow('correctColorImage', correctColorImage)
+    #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     preparedImage = prepareImage(correctColorImage)    
     copy = preparedImage.copy() #need to do this because the findContours function alters the source image
@@ -329,21 +342,21 @@ def findHighGoalTarget(img):
 
     #print 'len(correctNumberOfContoursList)', len(correctNumberOfContoursList)
     drawBoundingBoxes(img, correctNumberOfContoursList)
-    #cv2.waitkey()
+    #cv2.waitKey()
     correctSizeList = filterSize(correctNumberOfContoursList,10,500,10,500)
     #print 'len(correctSizeList)', len(correctSizeList)
     drawBoundingBoxes(img, correctSizeList)
-    #cv2.waitkey()
+    #cv2.waitKey()
     correctWidth = filterLength2WidthRatio(correctSizeList, 2.5, 3.5)
     #print 'len(correctWidth)', len(correctWidth)
     drawBoundingBoxes(img, correctWidth)
-    #cv2.waitkey()
+    #cv2.waitKey()
     correctBlack2WhiteRatioList = filterBlack2WhiteRatio(correctWidth, preparedImage,0,3)
     #print 'len(correctBlack2WhiteRatioList)', len(correctBlack2WhiteRatioList)
     drawBoundingBoxes(img, correctBlack2WhiteRatioList)
     correctFilterByOtherTargetsList = filterByOtherTargetHighGoal(correctBlack2WhiteRatioList,2,20,2)
     #print 'correctFilterByOtherTargetsList', len(correctFilterByOtherTargetsList)
-    #cv2.waitkey()
+    #cv2.waitKey()
     #correctTopHalfBlack2WhiteRatioList = filterTopHalfBlack2WhiteRatio(correctBlack2WhiteRatioList, preparedImage,1,4)
 
     #print len(correctTopHalfBlack2WhiteRatioList)
@@ -364,7 +377,7 @@ def findHighGoalTarget(img):
         #drawBoundingBoxes(preparedImage, correctLeftHalfBlack2WhiteRatioList)
         
         
-        #key = #cv2.waitkey(0)
+        #key = #cv2.waitKey(0)
 #        if key == ord('q'): # quit
  #           return None
   #      elif key == ord('g'): # good
@@ -456,8 +469,8 @@ def filterBlack2WhiteRatio(goodBoundingBoxes, image, blackToWhiteRatioMin, black
         else:
             #print 'box', box
             #print "the bad ones: ", ((width*(height/2) - numberOfWhitePixels+ 0.0))/(numberOfWhitePixels)
-            #cv2.imshow('temp Image',tempImage)
-            #cv2.waitkey()
+            ##cv2.imshow('temp Image',tempImage)
+            #cv2.waitKey()
             #cv2.destroyAllWindows()
             pass
     return betterBoundingBoxes
@@ -727,11 +740,15 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(picture, boundingB
         else:
             leftTarget = True
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
         if leftTarget:
             objPoints = np.matrix([[-5.125,0,15.75],[-3.125,0,10.75],[-5.125,0,10.75],[-3.125,0,15.75]])
         else:
             objPoints = np.matrix([[3.125,0,15.75],[5.125,0,10.75],[3.125,0,10.75],[5.125,0,15.75]])
-        
+
         x,y,width,height = correctTarget
         offset = height*0.21212121
         tempImage = picture[y - offset:y+height+offset, x-offset:x+width+offset]
@@ -823,18 +840,22 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
     #print 'len(boundingBoxesOfTargets)', len(boundingBoxesOfTargets)
     #print 'boundingBoxesOfTargets', boundingBoxesOfTargets
     if len(boundingBoxesOfTargets) == 1:
+        
         boundingBoxOfTarget = boundingBoxesOfTargets[0]
         distanceToMoveLaterally, distanceToMoveForward = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(boundingBoxOfTarget)
 
         #print "initial ", distanceToMoveLaterally
 
         if distanceToMoveLaterally < 0:
+            print 'leftTarget False'
             distanceToMoveLaterally = distanceToMoveLaterally - 3.135
         else:
+            print 'leftTarget True'
             distanceToMoveLaterally = distanceToMoveLaterally + 5.135
         distanceToMoveLaterally = distanceToMoveLaterally + m_rightOffsetOfGearPlacerFromCamera
         distanceToMoveForward = distanceToMoveForward + m_forwardOffsetOfGearPlacerFromCamera
         #distanceToMoveLaterally = distanceToMoveLaterally-2.5
+        
         return distanceToMoveLaterally, distanceToMoveForward
     
     firstBoundingBox = boundingBoxesOfTargets[0]
@@ -872,13 +893,13 @@ def getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(boundingBoxesOfTarget
         leftTarget = True
         
     distanceToMoveLaterally,distanceToMoveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardBoundingBox(correctTarget)
+    print 'leftTarget', leftTarget
     if leftTarget:
         distanceToMoveLaterally = distanceToMoveLaterally + 5.125
     else:
         distanceToMoveLaterally = distanceToMoveLaterally - 3.125
 
     #distanceToMoveLaterally = distanceToMoveLaterally-2.5
-        
     return distanceToMoveLaterally, distanceToMoveForwardLift
 
 def initNetworkTables():
@@ -977,6 +998,7 @@ def main():
             setShortTermMemory(timestampForPi, cameraStream)
             #print 'timestamp', timestamp
             retLift,liftTargets = findLiftTarget(cameraStream)
+            print 'retLift', retLift
             if retLift and initialrobotParallelStatus and afterPicRobotParallelStatus:
                 #robotR, robotTvecAfterTurning= getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(cameraStream, cameraStream, liftTargets)
 
@@ -995,24 +1017,41 @@ def main():
                 print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
            
             else:
+<<<<<<< HEAD
 
                 putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
                 print "Working"
+=======
+                putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
+                #print "Working"
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
             dispatchCommands(timestampForPi, cameraStream, sd)    
             
 main()
 
-#TURN OFF THE PI !!!!!!!!!!!!!!!!!!!!!!
 
-#pics = '/home/pi/test/AndromedaVision/WPI Pics'
+#pics = '/home/pi/Pictures/PicsFromUNH'
 #for filename in os.listdir(pics):
  #   fullFileName = os.path.join(pics, filename)
+<<<<<<< HEAD
   #  #print 'fullFileName', fullFileName
    # pic = cv2.imread(fullFileName)
     #retLift, liftTargets = findLiftTarget(pic)
     #distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets)
+=======
+  #  print 'fullFileName', fullFileName
+   # pic = cv2.imread(fullFileName)
+    #retLift, liftTargets = findLiftTarget(pic)
+    #distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets, pic)
+>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #print "distanceToMoveLaterallyLift", distanceToMoveLaterallyLift
-
-#cv2.destroyAllWindows()
-
+    #cv2.waitKey(0)
     
+#cv2.destroyAllWindows()
+#pic = cv2.imread("/home/pi/Pictures/BadImages/Image937486405.png")
+#retLift, liftTargets = findLiftTarget(pic)
+#distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets, pic)
+#print "distanceToMoveLaterallyLift", distanceToMoveLaterallyLift
+#cv2.waitKey(0)
+    
+cv2.destroyAllWindows()
