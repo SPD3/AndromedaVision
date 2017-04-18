@@ -167,13 +167,8 @@ def getCameraStream(rawCapture, networkTable):
         #small = cv2.resize(image, (0,0), fx = 0.45, fy = 0.45)
         ##cv2.imshow('h', image)
         #cv2.imwrite("/home/pi/Pictures/test.png", image)
-<<<<<<< HEAD
 
-        #cv2.waitkey(0)
-
-=======
-        #cv2.waitKey(0)
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
+        #cv2.waitKey(0)>>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
         #cv2.destroyAllWindows()
         return robotTimestamp,undistortedImage, timestamp2
     
@@ -195,10 +190,7 @@ def findLiftTarget(img):
     #Runs all the filtiration methods to find the Upper High Goal Target
     correctColorImage = filterColors(img,59,150,5,63,255,75)#(img,55,250,10,60,255,65)
     #cv2.imshow('Processed Image', correctColorImage)
-<<<<<<< HEAD
 
-=======
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
 
@@ -224,13 +216,8 @@ def findLiftTarget(img):
     correctLengthToWidthRatioList = filterLength2WidthRatio(correctBlack2WhiteRatioList,0.2,0.6)
 
     
-<<<<<<< HEAD
     #print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
     #drawBoundingBoxes(img, correctLengthToWidthRatioList)
-=======
-    print 'correctLengthToWidthRatioList: ',len(correctLengthToWidthRatioList)
-    drawBoundingBoxes(img, correctLengthToWidthRatioList)
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     
@@ -740,10 +727,7 @@ def getRadiansToTurnLiftAndDistanceToDriveForwardAndLaterally(picture, boundingB
         else:
             leftTarget = True
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
         if leftTarget:
             objPoints = np.matrix([[-5.125,0,15.75],[-3.125,0,10.75],[-5.125,0,10.75],[-3.125,0,15.75]])
         else:
@@ -1017,14 +1001,9 @@ def main():
                 print 'distanceToDriveForwardLift', distanceToDriveForwardLift, " Inches"
            
             else:
-<<<<<<< HEAD
 
                 putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
-                print "Working"
-=======
-                putDataOnNetworkTablesLift(sd,False,timestampForPi,timestamp,0,0,0)
                 #print "Working"
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
             dispatchCommands(timestampForPi, cameraStream, sd)    
             
 main()
@@ -1033,17 +1012,10 @@ main()
 #pics = '/home/pi/Pictures/PicsFromUNH'
 #for filename in os.listdir(pics):
  #   fullFileName = os.path.join(pics, filename)
-<<<<<<< HEAD
-  #  #print 'fullFileName', fullFileName
-   # pic = cv2.imread(fullFileName)
-    #retLift, liftTargets = findLiftTarget(pic)
-    #distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets)
-=======
   #  print 'fullFileName', fullFileName
    # pic = cv2.imread(fullFileName)
     #retLift, liftTargets = findLiftTarget(pic)
     #distanceToMoveLaterallyLift, distanceToDriveForwardLift = getDistanceToMoveLaterallyAndDistanceToMoveForwardLift(liftTargets, pic)
->>>>>>> fb0b1311040ab4c861f94eae3a497421292d0ada
     #print "distanceToMoveLaterallyLift", distanceToMoveLaterallyLift
     #cv2.waitKey(0)
     
