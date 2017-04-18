@@ -1,6 +1,6 @@
 #import pkg_resources
 #print pkg_resources.get_distribution('picamera').version
-#Testing
+
 import cv2
 import numpy as np
 import os
