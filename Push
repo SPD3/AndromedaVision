@@ -1,3 +1,0 @@
-#!/bin/bash
-git push $1 master:FromLaptop
-ssh pi@$1.local /home/pi/test/AndromedaVision/MergeBranch

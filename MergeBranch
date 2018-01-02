@@ -1,5 +1,0 @@
-#!/bin/bash
-cd /home/pi/test/AndromedaVision
-git merge FromLaptop
-git branch -d FromLaptop
-
